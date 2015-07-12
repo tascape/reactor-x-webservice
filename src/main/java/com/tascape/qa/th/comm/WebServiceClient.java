@@ -45,6 +45,8 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -73,17 +75,19 @@ public class WebServiceClient extends EntityCommunication {
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
 
-    public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.webserviceclient.CLIENT_CERT";
-
     private final String host;
 
     private final int port;
 
     private final String baseUri;
 
+    private String clientCertificate;
+
+    private String keyPassword;
+
     private CloseableHttpClient client;
 
-    private CookieStore cookieStore;
+    private CookieStore cookieStore = new BasicCookieStore();
 
     private final Map<String, Long> responseTime = new HashMap<>();
 
@@ -102,13 +106,21 @@ public class WebServiceClient extends EntityCommunication {
         }
     }
 
+    /**
+     * Call this to provide client certificate.
+     *
+     * @param clientCertificate client certificate file
+     * @param keyPassword       client certificate password
+     */
+    public void setClientCertificate(String clientCertificate, String keyPassword) {
+        this.clientCertificate = clientCertificate;
+        this.keyPassword = keyPassword;
+    }
+
     @Override
     public void connect() throws Exception {
         SSLContextBuilder contextBuilder = SSLContexts.custom();
         contextBuilder.loadTrustMaterial(null, acceptingTrustStrategy);
-
-        String cc = SYSCONFIG.getProperty(SYSPROP_CLIENT_CERT);
-        LOG.debug("client cert {}", cc);
 
         RegistryBuilder registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
             .register("http", new PlainConnectionSocketFactory());
@@ -119,17 +131,22 @@ public class WebServiceClient extends EntityCommunication {
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
             .setRedirectStrategy(new LaxRedirectStrategy());
 
-        if (cc != null) {
-            try (FileInputStream instream = new FileInputStream(new File(cc))) {
+        if (clientCertificate != null && keyPassword != null) {
+            LOG.debug("client cert {}", clientCertificate);
+            try (FileInputStream instream = new FileInputStream(new File(clientCertificate))) {
                 KeyStore ks = KeyStore.getInstance("pkcs12");
-                ks.load(instream, "123".toCharArray());
-                contextBuilder.loadKeyMaterial(ks, "123".toCharArray());
+                ks.load(instream, keyPassword.toCharArray());
+                contextBuilder.loadKeyMaterial(ks, keyPassword.toCharArray());
             }
         }
-        SSLContext sslContext = contextBuilder.build();
-        SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
-        registryBuilder.register("https", sslsf);
-        httpClientBuilder.setSSLSocketFactory(sslsf);
+
+        if (port % 1000 == 443) {
+            SSLContext sslContext = contextBuilder.build();
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
+            registryBuilder.register("https", sslsf);
+            httpClientBuilder.setSSLSocketFactory(sslsf);
+        }
+
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         cm.setMaxTotal(200);
@@ -145,20 +162,16 @@ public class WebServiceClient extends EntityCommunication {
         this.client.close();
     }
 
-    public String get(String endpoint) throws IOException {
-        return this.get(endpoint, null, null);
-    }
-
-    public String get(String endpoint, String params) throws IOException {
-        return this.get(endpoint, params, null);
-    }
-
     public JSONObject getJsonObject(String endpoint) throws IOException {
         return new JSONObject(this.get(endpoint, null, null));
     }
 
     public JSONObject getJsonObject(String endpoint, String params) throws IOException {
         return new JSONObject(this.get(endpoint, params, null));
+    }
+
+    public JSONObject getJsonObject(String endpoint, String params, String requestId) throws IOException {
+        return new JSONObject(this.get(endpoint, params, requestId));
     }
 
     public JSONArray getJsonArray(String endpoint) throws IOException {
@@ -169,39 +182,108 @@ public class WebServiceClient extends EntityCommunication {
         return new JSONArray(this.get(endpoint, params, null));
     }
 
+    public JSONArray getJsonArray(String endpoint, String params, String reqestId) throws IOException {
+        return new JSONArray(this.get(endpoint, params, reqestId));
+    }
+
+    public String get(String endpoint) throws IOException {
+        return this.get(endpoint, null, null);
+    }
+
+    public String get(String endpoint, String params) throws IOException {
+        return this.get(endpoint, params, null);
+    }
+
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("GET {}", url);
-        HttpContext context = HttpClientContext.create();
+        HttpClientContext context = this.getHttpClientContext();
         HttpGet get = new HttpGet(url);
+
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(get, context);
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response);
+        return this.checkResponse(response, context);
     }
 
-    public String post(String endpoint, String params, String requestId) throws IOException {
+    public String post(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("POST {}", url);
-        HttpContext context = HttpClientContext.create();
+        String content = json.toString(2);
+        LOG.debug("JSON {}", content);
+        HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
+
+        StringEntity entity = new StringEntity(json.toString());
+        entity.setContentType("application/json");
+        post.setEntity(entity);
+
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(post, context);
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response);
+        return this.checkResponse(response, context);
     }
 
-    public String put(String endpoint, String params) throws IOException {
+    public String post(String endpoint, String params, String body, String requestId) throws IOException {
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        LOG.debug("POST {}", url);
+        LOG.debug("body {}", body);
+        HttpClientContext context = this.getHttpClientContext();
+        HttpPost post = new HttpPost(url);
+
+        StringEntity entity = new StringEntity(body);
+        entity.setContentType("text/plain");
+        post.setEntity(entity);
+
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(post, context);
+        if (requestId != null && !requestId.isEmpty()) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return this.checkResponse(response, context);
+    }
+
+    public String put(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("PUT {}", url);
-        HttpContext context = HttpClientContext.create();
+        String content = json.toString(2);
+        LOG.debug("JSON {}", content);
+        HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
+
+        StringEntity entity = new StringEntity(json.toString());
+        entity.setContentType("application/json");
+        put.setEntity(entity);
+
+        long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(put, context);
-        return this.checkResponse(response);
+        if (requestId != null && !requestId.isEmpty()) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return this.checkResponse(response, context);
+    }
+
+    public String put(String endpoint, String params, String body, String requestId) throws IOException {
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        LOG.debug("PUT {}", url);
+        LOG.debug("body {}", body);
+        HttpClientContext context = this.getHttpClientContext();
+        HttpPut put = new HttpPut(url);
+
+        StringEntity entity = new StringEntity(body);
+        entity.setContentType("text/plain");
+        put.setEntity(entity);
+
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(put, context);
+        if (requestId != null && !requestId.isEmpty()) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return this.checkResponse(response, context);
     }
 
     public Long getResponseTime(String reqId) {
@@ -216,12 +298,23 @@ public class WebServiceClient extends EntityCommunication {
         return URLEncoder.encode(param, "UTF-8");
     }
 
-    private String checkResponse(CloseableHttpResponse response) throws IOException {
+    private HttpClientContext getHttpClientContext() {
+        HttpClientContext context = new HttpClientContext();
+        synchronized (this) {
+            context.setCookieStore(this.cookieStore);
+        }
+        return context;
+    }
+
+    private String checkResponse(CloseableHttpResponse response, HttpClientContext context) throws IOException {
         String res = EntityUtils.toString(response.getEntity());
         int code = response.getStatusLine().getStatusCode();
         if (code < 200 || code >= 300) {
             LOG.warn("{}", response.getStatusLine());
             throw new IOException(res);
+        }
+        synchronized (this) {
+            this.cookieStore = context.getCookieStore();
         }
         return res;
     }
