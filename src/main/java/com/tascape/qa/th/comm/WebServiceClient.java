@@ -29,7 +29,6 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -46,7 +45,6 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -87,9 +85,15 @@ public class WebServiceClient extends EntityCommunication {
 
     private CloseableHttpClient client;
 
-    private CookieStore cookieStore = new BasicCookieStore();
-
     private final Map<String, Long> responseTime = new HashMap<>();
+
+    public static String getUri(String uri) throws IOException {
+        CloseableHttpClient c = HttpClients.createDefault();
+        HttpGet get = new HttpGet(uri);
+        LOG.debug("get {}", uri);
+        CloseableHttpResponse res = c.execute(get, getHttpClientContext());
+        return checkResponse(res);
+    }
 
     /**
      *
@@ -197,7 +201,7 @@ public class WebServiceClient extends EntityCommunication {
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("GET {}", url);
-        HttpClientContext context = this.getHttpClientContext();
+        HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpGet get = new HttpGet(url);
 
         long start = System.currentTimeMillis();
@@ -205,7 +209,7 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response, context);
+        return WebServiceClient.checkResponse(response);
     }
 
     public String post(String endpoint, String params, JSONObject json, String requestId) throws IOException {
@@ -213,7 +217,7 @@ public class WebServiceClient extends EntityCommunication {
         LOG.debug("POST {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = this.getHttpClientContext();
+        HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -225,14 +229,14 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response, context);
+        return WebServiceClient.checkResponse(response);
     }
 
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("POST {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = this.getHttpClientContext();
+        HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(body);
@@ -244,7 +248,7 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response, context);
+        return WebServiceClient.checkResponse(response);
     }
 
     public String put(String endpoint, String params, JSONObject json, String requestId) throws IOException {
@@ -252,7 +256,7 @@ public class WebServiceClient extends EntityCommunication {
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = this.getHttpClientContext();
+        HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -264,14 +268,14 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response, context);
+        return WebServiceClient.checkResponse(response);
     }
 
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("PUT {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = this.getHttpClientContext();
+        HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(body);
@@ -283,7 +287,8 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return this.checkResponse(response, context);
+
+        return WebServiceClient.checkResponse(response);
     }
 
     public Long getResponseTime(String reqId) {
@@ -298,23 +303,16 @@ public class WebServiceClient extends EntityCommunication {
         return URLEncoder.encode(param, "UTF-8");
     }
 
-    private HttpClientContext getHttpClientContext() {
-        HttpClientContext context = new HttpClientContext();
-        synchronized (this) {
-            context.setCookieStore(this.cookieStore);
-        }
-        return context;
+    private static HttpClientContext getHttpClientContext() {
+        return HttpClientContext.create();
     }
 
-    private String checkResponse(CloseableHttpResponse response, HttpClientContext context) throws IOException {
+    private static String checkResponse(CloseableHttpResponse response) throws IOException {
         String res = EntityUtils.toString(response.getEntity());
         int code = response.getStatusLine().getStatusCode();
         if (code < 200 || code >= 300) {
             LOG.warn("{}", response.getStatusLine());
             throw new IOException(res);
-        }
-        synchronized (this) {
-            this.cookieStore = context.getCookieStore();
         }
         return res;
     }
