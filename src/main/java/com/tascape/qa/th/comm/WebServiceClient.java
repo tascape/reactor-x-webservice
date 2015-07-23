@@ -212,7 +212,15 @@ public class WebServiceClient extends EntityCommunication {
         return WebServiceClient.checkResponse(response);
     }
 
-    public String post(String endpoint, String params, JSONObject json, String requestId) throws IOException {
+    public String postJson(String endpoint, JSONObject json) throws IOException {
+        return this.postJson(endpoint, "", json, null);
+    }
+
+    public String postJson(String endpoint, String params, JSONObject json) throws IOException {
+        return this.postJson(endpoint, params, json, null);
+    }
+
+    public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("POST {}", url);
         String content = json.toString(2);
@@ -251,7 +259,7 @@ public class WebServiceClient extends EntityCommunication {
         return WebServiceClient.checkResponse(response);
     }
 
-    public String put(String endpoint, String params, JSONObject json, String requestId) throws IOException {
+    public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
