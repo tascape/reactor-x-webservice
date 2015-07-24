@@ -25,6 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
 import javax.net.ssl.SSLContext;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
@@ -199,7 +200,7 @@ public class WebServiceClient extends EntityCommunication {
     }
 
     public String get(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
         HttpClientContext context = WebServiceClient.getHttpClientContext();
         HttpGet get = new HttpGet(url);
@@ -240,8 +241,12 @@ public class WebServiceClient extends EntityCommunication {
         return WebServiceClient.checkResponse(response);
     }
 
+    public String post(String endpoint, String body) throws IOException {
+        return this.post(endpoint, "", body, "");
+    }
+
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
         LOG.debug("body {}", body);
         HttpClientContext context = WebServiceClient.getHttpClientContext();
@@ -260,7 +265,7 @@ public class WebServiceClient extends EntityCommunication {
     }
 
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
@@ -279,8 +284,12 @@ public class WebServiceClient extends EntityCommunication {
         return WebServiceClient.checkResponse(response);
     }
 
+    public String put(String endpoint, String body) throws IOException {
+        return this.put(endpoint, "", body, "");
+    }
+
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
         LOG.debug("body {}", body);
         HttpClientContext context = WebServiceClient.getHttpClientContext();
