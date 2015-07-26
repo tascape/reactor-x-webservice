@@ -6,8 +6,26 @@
 
     <groupId>com.tascape.qa</groupId>
     <artifactId>thx-webservice</artifactId>
-    <version>1.0.3</version>  
+    <version>1.0.4</version>  
     <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.tascape.qa</groupId>
+            <artifactId>testharness</artifactId>
+            <version>[1.0.10, 1.1.0)</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.4.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20141113</version>
+        </dependency>
+    </dependencies>
 
     <name>thx-webservice</name>
     <description>Testharness extension for web service related testing.</description>
@@ -67,22 +85,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.tascape.qa</groupId>
-            <artifactId>testharness</artifactId>
-            <version>[1.0.10, 1.1.0)</version>
-        </dependency>        
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>4.4.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20141113</version>
-        </dependency>
-    </dependencies>
 </project>

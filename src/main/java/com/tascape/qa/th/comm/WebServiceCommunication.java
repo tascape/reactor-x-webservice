@@ -67,8 +67,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author Linsong Wang
  */
-public class WebServiceClient extends EntityCommunication {
-    private static final Logger LOG = LoggerFactory.getLogger(WebServiceClient.class);
+public class WebServiceCommunication extends EntityCommunication {
+    private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
     public static String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
@@ -101,7 +101,7 @@ public class WebServiceClient extends EntityCommunication {
      * @param host host DNS name or IP
      * @param port https for *443, http for others
      */
-    public WebServiceClient(String host, int port) {
+    public WebServiceCommunication(String host, int port) {
         this.host = host;
         this.port = port;
         if (port % 1000 == 443) {
@@ -202,15 +202,15 @@ public class WebServiceClient extends EntityCommunication {
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
-        HttpClientContext context = WebServiceClient.getHttpClientContext();
+        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
         HttpGet get = new HttpGet(url);
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(get, context);
-        if (requestId != null && !requestId.isEmpty()) {
+        if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceClient.checkResponse(response);
+        return WebServiceCommunication.checkResponse(response);
     }
 
     public String postJson(String endpoint, JSONObject json) throws IOException {
@@ -222,11 +222,11 @@ public class WebServiceClient extends EntityCommunication {
     }
 
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, params == null ? "" : params);
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = WebServiceClient.getHttpClientContext();
+        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -235,10 +235,10 @@ public class WebServiceClient extends EntityCommunication {
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(post, context);
-        if (requestId != null && !requestId.isEmpty()) {
+        if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceClient.checkResponse(response);
+        return WebServiceCommunication.checkResponse(response);
     }
 
     public String post(String endpoint, String body) throws IOException {
@@ -249,7 +249,7 @@ public class WebServiceClient extends EntityCommunication {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = WebServiceClient.getHttpClientContext();
+        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(body);
@@ -258,10 +258,10 @@ public class WebServiceClient extends EntityCommunication {
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(post, context);
-        if (requestId != null && !requestId.isEmpty()) {
+        if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceClient.checkResponse(response);
+        return WebServiceCommunication.checkResponse(response);
     }
 
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
@@ -269,7 +269,7 @@ public class WebServiceClient extends EntityCommunication {
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = WebServiceClient.getHttpClientContext();
+        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -281,7 +281,7 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceClient.checkResponse(response);
+        return WebServiceCommunication.checkResponse(response);
     }
 
     public String put(String endpoint, String body) throws IOException {
@@ -292,7 +292,7 @@ public class WebServiceClient extends EntityCommunication {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = WebServiceClient.getHttpClientContext();
+        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(body);
@@ -304,8 +304,7 @@ public class WebServiceClient extends EntityCommunication {
         if (requestId != null && !requestId.isEmpty()) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-
-        return WebServiceClient.checkResponse(response);
+        return WebServiceCommunication.checkResponse(response);
     }
 
     public Long getResponseTime(String reqId) {
@@ -354,7 +353,7 @@ public class WebServiceClient extends EntityCommunication {
     };
 
     public static void main(String[] args) throws Exception {
-        WebServiceClient ws = new WebServiceClient("bit.ly", 80);
+        WebServiceCommunication ws = new WebServiceCommunication("bit.ly", 80);
         ws.connect();
         String status = ws.get("1c1mBAI");
         LOG.info(status);
