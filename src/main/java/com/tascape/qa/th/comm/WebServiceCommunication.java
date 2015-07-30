@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -317,6 +318,10 @@ public class WebServiceCommunication extends EntityCommunication {
 
     public static String encode(String param) throws UnsupportedEncodingException {
         return URLEncoder.encode(param, "UTF-8");
+    }
+
+    public static String decode(String param) throws UnsupportedEncodingException {
+        return URLDecoder.decode(param, "UTF-8");
     }
 
     private static HttpClientContext getHttpClientContext() {
