@@ -31,6 +31,9 @@ import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -47,6 +50,7 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
@@ -85,6 +89,8 @@ public class WebServiceCommunication extends EntityCommunication {
 
     private String keyPassword;
 
+    private CredentialsProvider credentialsProvider;
+
     private CloseableHttpClient client;
 
     private final Map<String, Long> responseTime = new HashMap<>();
@@ -93,7 +99,7 @@ public class WebServiceCommunication extends EntityCommunication {
         CloseableHttpClient c = HttpClients.createDefault();
         HttpGet get = new HttpGet(uri);
         LOG.debug("get {}", uri);
-        CloseableHttpResponse res = c.execute(get, getHttpClientContext());
+        CloseableHttpResponse res = c.execute(get, HttpClientContext.create());
         return checkResponse(res);
     }
 
@@ -121,6 +127,19 @@ public class WebServiceCommunication extends EntityCommunication {
     public void setClientCertificate(String clientCertificate, String keyPassword) {
         this.clientCertificate = clientCertificate;
         this.keyPassword = keyPassword;
+    }
+
+    /**
+     * Call this to provide username and password.
+     *
+     * @param username user name
+     * @param password password
+     */
+    public void setUsernamePassword(String username, String password) {
+        credentialsProvider = new BasicCredentialsProvider();
+        credentialsProvider.setCredentials(
+            new AuthScope(host, port),
+            new UsernamePasswordCredentials(username, password));
     }
 
     @Override
@@ -203,7 +222,7 @@ public class WebServiceCommunication extends EntityCommunication {
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
-        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
+        HttpClientContext context = this.getHttpClientContext();
         HttpGet get = new HttpGet(url);
 
         long start = System.currentTimeMillis();
@@ -227,7 +246,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("POST {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
+        HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -250,7 +269,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
+        HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(body);
@@ -270,7 +289,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
         LOG.debug("JSON {}", content);
-        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
+        HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -293,7 +312,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
         LOG.debug("body {}", body);
-        HttpClientContext context = WebServiceCommunication.getHttpClientContext();
+        HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(body);
@@ -324,8 +343,12 @@ public class WebServiceCommunication extends EntityCommunication {
         return URLDecoder.decode(param, "UTF-8");
     }
 
-    private static HttpClientContext getHttpClientContext() {
-        return HttpClientContext.create();
+    private HttpClientContext getHttpClientContext() {
+        HttpClientContext context = HttpClientContext.create();
+        if (this.credentialsProvider != null) {
+            context.setCredentialsProvider(credentialsProvider);
+        }
+        return context;
     }
 
     private static String checkResponse(CloseableHttpResponse response) throws IOException {
