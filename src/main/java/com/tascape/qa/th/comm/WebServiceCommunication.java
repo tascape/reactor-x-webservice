@@ -29,10 +29,17 @@ import javax.net.ssl.SSLContext;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
+import org.apache.http.auth.AuthScheme;
 import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -50,6 +57,8 @@ import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -59,6 +68,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
@@ -75,6 +85,10 @@ import org.slf4j.LoggerFactory;
 public class WebServiceCommunication extends EntityCommunication {
     private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
+    public static final String SYSPROP_HOST = "qa.th.comm.ws.HOST";
+
+    public static final String SYSPROP_PORT = "qa.th.comm.ws.PORT";
+
     public static String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
@@ -83,15 +97,21 @@ public class WebServiceCommunication extends EntityCommunication {
 
     private final int port;
 
+    private final HttpHost httpHost;
+
     private final String baseUri;
 
     private String clientCertificate;
 
     private String keyPassword;
 
-    private CredentialsProvider credentialsProvider;
+    private CredentialsProvider userPassCredentialsProvider;
+
+    private AuthCache authCache;
 
     private CloseableHttpClient client;
+
+    private final Map<String, String> headers = new HashMap<>();
 
     private final Map<String, Long> responseTime = new HashMap<>();
 
@@ -104,7 +124,7 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     *
+    *
      * @param host host DNS name or IP
      * @param port https for *443, http for others
      */
@@ -113,8 +133,10 @@ public class WebServiceCommunication extends EntityCommunication {
         this.port = port;
         if (port % 1000 == 443) {
             this.baseUri = "https://" + host + ":" + port;
+            this.httpHost = new HttpHost(host, port, "https");
         } else {
             this.baseUri = "http://" + host + ":" + port;
+            this.httpHost = new HttpHost(host, port, "http");
         }
     }
 
@@ -130,16 +152,24 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     * Call this to provide username and password.
+     * Call this to provide username and password. This will use Basic authentication, with a header such as
+     * "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
      *
      * @param username user name
      * @param password password
      */
     public void setUsernamePassword(String username, String password) {
-        credentialsProvider = new BasicCredentialsProvider();
-        credentialsProvider.setCredentials(
-            new AuthScope(host, port),
+        userPassCredentialsProvider = new BasicCredentialsProvider();
+        userPassCredentialsProvider.setCredentials(AuthScope.ANY,
             new UsernamePasswordCredentials(username, password));
+
+        authCache = new BasicAuthCache();
+        BasicScheme basicAuth = new BasicScheme();
+        authCache.put(httpHost, basicAuth);
+    }
+
+    public void setHeader(String name, String value) {
+        this.headers.put(name, value);
     }
 
     @Override
@@ -155,6 +185,10 @@ public class WebServiceCommunication extends EntityCommunication {
             .setKeepAliveStrategy(this.keepAliveStrategy)
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
             .setRedirectStrategy(new LaxRedirectStrategy());
+
+        if (this.userPassCredentialsProvider != null) {
+            httpClientBuilder.addInterceptorFirst(preemptiveAuth);
+        }
 
         if (clientCertificate != null && keyPassword != null) {
             LOG.debug("client cert {}", clientCertificate);
@@ -176,8 +210,7 @@ public class WebServiceCommunication extends EntityCommunication {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(20);
-        HttpHost h = new HttpHost(this.host, this.port);
-        cm.setMaxPerRoute(new HttpRoute(h), 200);
+        cm.setMaxPerRoute(new HttpRoute(httpHost), 200);
 
         this.client = httpClientBuilder.setConnectionManager(cm).build();
     }
@@ -224,6 +257,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("GET {}", url);
         HttpClientContext context = this.getHttpClientContext();
         HttpGet get = new HttpGet(url);
+        this.addHeaders(get);
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(get, context);
@@ -248,6 +282,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("JSON {}", content);
         HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
+        this.addHeaders(post);
 
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
@@ -271,6 +306,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("body {}", body);
         HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
+        this.addHeaders(post);
 
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
@@ -291,6 +327,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("JSON {}", content);
         HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
+        this.addHeaders(put);
 
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
@@ -314,6 +351,7 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("body {}", body);
         HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
+        this.addHeaders(put);
 
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
@@ -343,10 +381,19 @@ public class WebServiceCommunication extends EntityCommunication {
         return URLDecoder.decode(param, "UTF-8");
     }
 
+    private void addHeaders(HttpRequest request) {
+        this.headers.entrySet().forEach(header -> {
+            request.setHeader(header.getKey(), header.getValue());
+        });
+    }
+
     private HttpClientContext getHttpClientContext() {
         HttpClientContext context = HttpClientContext.create();
-        if (this.credentialsProvider != null) {
-            context.setCredentialsProvider(credentialsProvider);
+        if (this.userPassCredentialsProvider != null) {
+            context.setCredentialsProvider(userPassCredentialsProvider);
+            context.setAuthCache(authCache);
+            BasicScheme basicAuth = new BasicScheme();
+            context.setAttribute("preemptive-auth", basicAuth);
         }
         return context;
     }
@@ -356,7 +403,7 @@ public class WebServiceCommunication extends EntityCommunication {
         int code = response.getStatusLine().getStatusCode();
         if (code < 200 || code >= 300) {
             LOG.warn("{}", response.getStatusLine());
-            throw new IOException(res);
+            throw new WebServiceException(code, res);
         }
         return res;
     }
@@ -378,6 +425,31 @@ public class WebServiceCommunication extends EntityCommunication {
             }
         }
         return 30000;
+    };
+
+    /*
+     * borrowed from https://subversion.jfrog.org/jfrog/build-info/trunk/build-info-client/src/main/java/org/jfrog/
+     * build/client/PreemptiveHttpClient.java
+     */
+    private final HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
+        @Override
+        public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+            AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
+            if (authState.getAuthScheme() == null) {
+                AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
+                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+                    HttpClientContext.CREDS_PROVIDER);
+                HttpHost targetHost = (HttpHost) context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
+                if (authScheme != null) {
+                    Credentials creds = credsProvider.getCredentials(
+                        new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+                    if (creds == null) {
+                        throw new HttpException("No credentials for preemptive authentication");
+                    }
+                    authState.update(authScheme, creds);
+                }
+            }
+        }
     };
 
     public static void main(String[] args) throws Exception {
