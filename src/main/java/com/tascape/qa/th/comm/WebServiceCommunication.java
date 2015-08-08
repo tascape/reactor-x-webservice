@@ -89,11 +89,11 @@ public class WebServiceCommunication extends EntityCommunication {
 
     public static final String SYSPROP_PORT = "qa.th.comm.ws.PORT";
 
+    public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.ws.CLIENT_CERT";
+
     public static String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
-
-    private final String host;
 
     private final int port;
 
@@ -124,12 +124,11 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-    *
+     *
      * @param host host DNS name or IP
      * @param port https for *443, http for others
      */
     public WebServiceCommunication(String host, int port) {
-        this.host = host;
         this.port = port;
         if (port % 1000 == 443) {
             this.baseUri = "https://" + host + ":" + port;
@@ -296,8 +295,16 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
-    public String post(String endpoint, String body) throws IOException {
-        return this.post(endpoint, "", body, "");
+    public String post(String endpoint) throws IOException {
+        return this.post(endpoint, "");
+    }
+
+    public String post(String endpoint, String params) throws IOException {
+        return this.post(endpoint, params, "");
+    }
+
+    public String post(String endpoint, String params, String body) throws IOException {
+        return this.post(endpoint, params, body, "");
     }
 
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
