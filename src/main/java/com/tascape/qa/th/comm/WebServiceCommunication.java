@@ -267,11 +267,11 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     public String postJson(String endpoint, JSONObject json) throws IOException {
-        return this.postJson(endpoint, "", json, null);
+        return this.postJson(endpoint, "", json);
     }
 
     public String postJson(String endpoint, String params, JSONObject json) throws IOException {
-        return this.postJson(endpoint, params, json, null);
+        return this.postJson(endpoint, params, json, "");
     }
 
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
@@ -327,11 +327,19 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    public String putJson(String endpoint, JSONObject json) throws IOException {
+        return this.putJson(endpoint, "", json);
+    }
+
+    public String putJson(String endpoint, String params, JSONObject json) throws IOException {
+        return this.putJson(endpoint, params, json, "");
+    }
+
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
         String content = json.toString(2);
-        LOG.debug("JSON {}", content);
+        LOG.debug("JSON\n{}", content);
         HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
         this.addHeaders(put);
@@ -342,14 +350,18 @@ public class WebServiceCommunication extends EntityCommunication {
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(put, context);
-        if (requestId != null && !requestId.isEmpty()) {
+        if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
         return WebServiceCommunication.checkResponse(response);
     }
 
-    public String put(String endpoint, String body) throws IOException {
-        return this.put(endpoint, "", body, "");
+    public String put(String endpoint, String param) throws IOException {
+        return this.put(endpoint, param, "");
+    }
+
+    public String put(String endpoint, String param, String body) throws IOException {
+        return this.put(endpoint, param, body, "");
     }
 
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
@@ -366,7 +378,7 @@ public class WebServiceCommunication extends EntityCommunication {
 
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(put, context);
-        if (requestId != null && !requestId.isEmpty()) {
+        if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
         return WebServiceCommunication.checkResponse(response);
