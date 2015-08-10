@@ -92,6 +92,10 @@ public class WebServiceCommunication extends EntityCommunication {
 
     public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.ws.CLIENT_CERT";
 
+    public static final String SYSPROP_USER = "qa.th.comm.ws.USER";
+
+    public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
+
     public static String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
