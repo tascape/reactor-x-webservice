@@ -6,7 +6,7 @@
 
     <groupId>com.tascape.qa</groupId>
     <artifactId>thx-webservice</artifactId>
-    <version>1.0.11</version>
+    <version>1.0.12</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -29,7 +29,7 @@
 
     <name>thx-webservice</name>
     <description>Testharness extension for web service related testing.</description>
-    <url>https://github.com/tascape/testharness</url>
+    <url>https://github.com/tascape/testharness-x-webservice</url>
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>

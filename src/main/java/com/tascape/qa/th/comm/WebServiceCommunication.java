@@ -92,6 +92,8 @@ public class WebServiceCommunication extends EntityCommunication {
 
     public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.ws.CLIENT_CERT";
 
+    public static final String SYSPROP_CLIENT_CERT_PASS = "qa.th.comm.ws.CLIENT_CERT_PASS";
+
     public static final String SYSPROP_USER = "qa.th.comm.ws.USER";
 
     public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
@@ -126,6 +128,80 @@ public class WebServiceCommunication extends EntityCommunication {
         LOG.debug("get {}", uri);
         CloseableHttpResponse res = c.execute(get, HttpClientContext.create());
         return checkResponse(res);
+    }
+
+    /**
+     * Needs system properties.
+     * <ul>
+     * <li>qa.th.comm.ws.HOST, default value is localhost if not set</li>
+     * <li>qa.th.comm.ws.PORT, default value is 443 if not set</li>
+     * <li>qa.th.comm.ws.USER, no default</li>
+     * <li>qa.th.comm.ws.PASS, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT_PASS, no default</li>
+     * </ul>
+     *
+     * @return an instance of communication
+     *
+     * @throws Exception if having problem connecting to the service
+     */
+    public static WebServiceCommunication newInstance() throws Exception {
+        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
+        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
+        WebServiceCommunication wsc = new WebServiceCommunication(host, port);
+
+        String user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER);
+        String pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS);
+        if (null != user && null != pass) {
+            wsc.setUsernamePassword(user, pass);
+        }
+
+        String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
+        String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
+        if (null != clientCert && null != clientCertPass) {
+            wsc.setUsernamePassword(clientCert, clientCertPass);
+        }
+
+        wsc.connect();
+        return wsc;
+    }
+
+    /**
+     * Needs system properties.
+     * <ul>
+     * <li>qa.th.comm.ws.HOST.$name, default value is localhost if not set</li>
+     * <li>qa.th.comm.ws.PORT.$name, default value is 443 if not set</li>
+     * <li>qa.th.comm.ws.USER.$name, no default</li>
+     * <li>qa.th.comm.ws.PASS.$name, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT.$name, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT_PASS.$name, no default</li>
+     * </ul>
+     *
+     * @param name name of each require system property
+     *
+     * @return an instance of communication
+     *
+     * @throws Exception if having problem connecting to the service
+     */
+    public static WebServiceCommunication newInstance(String name) throws Exception {
+        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name, "localhost");
+        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 443);
+        WebServiceCommunication wsc = new WebServiceCommunication(host, port);
+
+        String user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
+        String pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS + "." + name);
+        if (null != user && null != pass) {
+            wsc.setUsernamePassword(user, pass);
+        }
+
+        String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
+        String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + "." + name);
+        if (null != clientCert && null != clientCertPass) {
+            wsc.setUsernamePassword(clientCert, clientCertPass);
+        }
+
+        wsc.connect();
+        return wsc;
     }
 
     /**
