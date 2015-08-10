@@ -44,6 +44,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -198,7 +199,7 @@ public class WebServiceCommunication extends EntityCommunication {
             }
         }
 
-        if (port % 1000 == 443) {
+        if ("https".equals(this.httpHost.getSchemeName())) {
             SSLContext sslContext = contextBuilder.build();
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
             registryBuilder.register("https", sslsf);
@@ -244,7 +245,7 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     public String get(String endpoint) throws IOException {
-        return this.get(endpoint, null, null);
+        return this.get(endpoint, null);
     }
 
     public String get(String endpoint, String params) throws IOException {
@@ -254,12 +255,35 @@ public class WebServiceCommunication extends EntityCommunication {
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
-        HttpClientContext context = this.getHttpClientContext();
         HttpGet get = new HttpGet(url);
-        this.addHeaders(get);
 
+        this.addHeaders(get);
+        HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(get, context);
+        if (!StringUtils.isBlank(requestId)) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return WebServiceCommunication.checkResponse(response);
+    }
+
+    public String delete(String endpoint) throws IOException {
+        return this.delete(endpoint, null);
+    }
+
+    public String delete(String endpoint, String params) throws IOException {
+        return this.delete(endpoint, params, null);
+    }
+
+    public String delete(String endpoint, String params, String requestId) throws IOException {
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        LOG.debug("DELETE {}", url);
+        HttpDelete delete = new HttpDelete(url);
+
+        this.addHeaders(delete);
+        HttpClientContext context = this.getHttpClientContext();
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(delete, context);
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
@@ -277,16 +301,14 @@ public class WebServiceCommunication extends EntityCommunication {
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
-        String content = json.toString(2);
-        LOG.debug("JSON {}", content);
-        HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
-        this.addHeaders(post);
 
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
         post.setEntity(entity);
 
+        this.addHeaders(post);
+        HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(post, context);
         if (!StringUtils.isBlank(requestId)) {
@@ -310,15 +332,14 @@ public class WebServiceCommunication extends EntityCommunication {
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
-        LOG.debug("body {}", body);
-        HttpClientContext context = this.getHttpClientContext();
         HttpPost post = new HttpPost(url);
-        this.addHeaders(post);
 
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
         post.setEntity(entity);
 
+        this.addHeaders(post);
+        HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(post, context);
         if (!StringUtils.isBlank(requestId)) {
@@ -338,16 +359,14 @@ public class WebServiceCommunication extends EntityCommunication {
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
-        String content = json.toString(2);
-        LOG.debug("JSON\n{}", content);
-        HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
-        this.addHeaders(put);
 
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
         put.setEntity(entity);
 
+        this.addHeaders(put);
+        HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(put, context);
         if (!StringUtils.isBlank(requestId)) {
@@ -367,15 +386,14 @@ public class WebServiceCommunication extends EntityCommunication {
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
-        LOG.debug("body {}", body);
-        HttpClientContext context = this.getHttpClientContext();
         HttpPut put = new HttpPut(url);
-        this.addHeaders(put);
 
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
         put.setEntity(entity);
 
+        this.addHeaders(put);
+        HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(put, context);
         if (!StringUtils.isBlank(requestId)) {
