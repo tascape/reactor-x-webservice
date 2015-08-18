@@ -13,7 +13,7 @@
         <dependency>
             <groupId>com.tascape.qa</groupId>
             <artifactId>testharness</artifactId>
-            <version>[1.0.18, 1.1.0)</version>
+            <version>[1.0.19, 1.1.0)</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -24,6 +24,12 @@
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20141113</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore-nio</artifactId>
+            <version>4.4.1</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 
