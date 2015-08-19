@@ -348,11 +348,11 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     public String delete(String endpoint) throws IOException {
-        return this.delete(endpoint, null);
+        return this.delete(endpoint, "");
     }
 
     public String delete(String endpoint, String params) throws IOException {
-        return this.delete(endpoint, params, null);
+        return this.delete(endpoint, params, "");
     }
 
     public String delete(String endpoint, String params, String requestId) throws IOException {
@@ -516,7 +516,10 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     private static String checkResponse(CloseableHttpResponse response) throws IOException {
-        String res = EntityUtils.toString(response.getEntity());
+        String res = "";
+        if (response.getEntity() != null) {
+            res = EntityUtils.toString(response.getEntity());
+        }
         int code = response.getStatusLine().getStatusCode();
         if (code < 200 || code >= 300) {
             LOG.warn("{}", response.getStatusLine());
