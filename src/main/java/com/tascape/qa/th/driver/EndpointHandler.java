@@ -13,19 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.comm;
+package com.tascape.qa.th.driver;
 
-import com.tascape.qa.th.driver.EntityDriver;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.nio.protocol.BasicAsyncRequestConsumer;
 import org.apache.http.nio.protocol.BasicAsyncResponseProducer;
 import org.apache.http.nio.protocol.HttpAsyncExchange;
 import org.apache.http.nio.protocol.HttpAsyncRequestConsumer;
 import org.apache.http.nio.protocol.HttpAsyncRequestHandler;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,5 +77,11 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
         }
 
         hae.submitResponse(new BasicAsyncResponseProducer(response));
+    }
+
+    public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
+        return URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), HTTP.UTF_8).stream()
+            .filter(param -> param.getName().equals(name))
+            .findFirst().get().getValue();
     }
 }

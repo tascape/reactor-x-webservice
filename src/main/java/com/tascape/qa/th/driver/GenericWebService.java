@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.comm;
+package com.tascape.qa.th.driver;
 
 import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.driver.EntityDriver;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -133,6 +134,16 @@ public final class GenericWebService extends EntityDriver {
         throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         EndpointHandler simulator = (EndpointHandler) Class.forName(clazz).newInstance();
         reqistry.register(simulator.getEndpoint(), simulator);
+    }
+
+    /**
+     *
+     * @return the first found IP address.
+     *
+     * @throws SocketException
+     */
+    public String getIpAddress() throws SocketException {
+        return NetworkInterface.getNetworkInterfaces().nextElement().getInetAddresses().nextElement().getHostAddress();
     }
 
     @Override
