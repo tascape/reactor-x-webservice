@@ -140,7 +140,7 @@ public final class GenericWebService extends EntityDriver {
      *
      * @return the first found IP address.
      *
-     * @throws SocketException
+     * @throws SocketException if cannot get IP address
      */
     public String getIpAddress() throws SocketException {
         return NetworkInterface.getNetworkInterfaces().nextElement().getInetAddresses().nextElement().getHostAddress();

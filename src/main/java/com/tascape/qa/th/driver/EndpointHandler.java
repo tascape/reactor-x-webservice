@@ -28,7 +28,6 @@ import org.apache.http.nio.protocol.BasicAsyncResponseProducer;
 import org.apache.http.nio.protocol.HttpAsyncExchange;
 import org.apache.http.nio.protocol.HttpAsyncRequestConsumer;
 import org.apache.http.nio.protocol.HttpAsyncRequestHandler;
-import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +79,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
     }
 
     public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
-        return URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), HTTP.UTF_8).stream()
+        return URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF_8").stream()
             .filter(param -> param.getName().equals(name))
             .findFirst().get().getValue();
     }

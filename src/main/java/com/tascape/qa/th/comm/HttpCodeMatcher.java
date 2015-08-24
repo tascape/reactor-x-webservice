@@ -15,28 +15,34 @@
  */
 package com.tascape.qa.th.comm;
 
-import java.io.IOException;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author linsong wang
  */
-public class WebServiceException extends IOException {
-
-    public static HttpCodeMatcher HTTP_400 = new HttpCodeMatcher(400);
-
-    public static HttpCodeMatcher HTTP_403 = new HttpCodeMatcher(403);
-
-    public static HttpCodeMatcher HTTP_404 = new HttpCodeMatcher(404);
+public class HttpCodeMatcher extends BaseMatcher<WebServiceException> {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpCodeMatcher.class);
 
     private final int httpCode;
 
-    public WebServiceException(int httpCode, String message) {
-        super(message);
+    public HttpCodeMatcher(int httpCode) {
         this.httpCode = httpCode;
     }
 
-    public int getHttpCode() {
-        return httpCode;
+    @Override
+    public boolean matches(Object item) {
+        LOG.info("Try to match HTTP code {}.", this.httpCode);
+        if (item instanceof WebServiceException) {
+            return ((WebServiceException) item).getHttpCode() == httpCode;
+        }
+        return false;
+    }
+
+    @Override
+    public void describeTo(Description description) {
     }
 }
