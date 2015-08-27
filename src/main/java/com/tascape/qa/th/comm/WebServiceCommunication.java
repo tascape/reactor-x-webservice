@@ -133,8 +133,8 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Needs system properties.
      * <ul>
-     * <li>qa.th.comm.ws.HOST, default value is localhost if not set</li>
-     * <li>qa.th.comm.ws.PORT, default value is 443 if not set</li>
+     * <li>qa.th.comm.ws.HOST, default to localhost if not set</li>
+     * <li>qa.th.comm.ws.PORT, default to 443 if not set</li>
      * <li>qa.th.comm.ws.USER, no default</li>
      * <li>qa.th.comm.ws.PASS, no default</li>
      * <li>qa.th.comm.ws.CLIENT_CERT, no default</li>
@@ -159,7 +159,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
         String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
         if (null != clientCert && null != clientCertPass) {
-            wsc.setUsernamePassword(clientCert, clientCertPass);
+            wsc.setClientCertificate(clientCert, clientCertPass);
         }
 
         wsc.connect();
@@ -169,12 +169,12 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Needs system properties.
      * <ul>
-     * <li>qa.th.comm.ws.HOST.$name, default value is localhost if not set</li>
-     * <li>qa.th.comm.ws.PORT.$name, default value is 443 if not set</li>
-     * <li>qa.th.comm.ws.USER.$name, no default</li>
-     * <li>qa.th.comm.ws.PASS.$name, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT.$name, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT_PASS.$name, no default</li>
+     * <li>qa.th.comm.ws.HOST.$name, fall back to qa.th.comm.ws.HOST, and then default to localhost if not set</li>
+     * <li>qa.th.comm.ws.PORT.$name, fall back to qa.th.comm.ws.PORT, then default to 443 if not set</li>
+     * <li>qa.th.comm.ws.USER.$name, fall back to qa.th.comm.ws.USER, no default</li>
+     * <li>qa.th.comm.ws.PASS.$name, fall back to qa.th.comm.ws.PASS, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT.$name, fall back to qa.th.comm.ws.CLIENT_CERT, no default</li>
+     * <li>qa.th.comm.ws.CLIENT_CERT_PASS.$name, fall back to qa.th.comm.ws.CLIENT_CERT_PASS, no default</li>
      * </ul>
      *
      * @param name name of each require system property
@@ -184,20 +184,38 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws Exception if having problem connecting to the service
      */
     public static WebServiceCommunication newInstance(String name) throws Exception {
-        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name, "localhost");
-        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 443);
+        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name);
+        if (host == null) {
+            host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
+        }
+        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 0);
+        if (port == 0) {
+            port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 443);
+        }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
 
         String user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
+        if (user == null) {
+            user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER);
+        }
         String pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS + "." + name);
+        if (pass == null) {
+            pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS);
+        }
         if (null != user && null != pass) {
             wsc.setUsernamePassword(user, pass);
         }
 
         String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
+        if (clientCert == null) {
+            clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
+        }
         String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + "." + name);
+        if (clientCertPass == null) {
+            clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
+        }
         if (null != clientCert && null != clientCertPass) {
-            wsc.setUsernamePassword(clientCert, clientCertPass);
+            wsc.setClientCertificate(clientCert, clientCertPass);
         }
 
         wsc.connect();
@@ -227,6 +245,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @param keyPassword       client certificate password
      */
     public void setClientCertificate(String clientCertificate, String keyPassword) {
+        LOG.debug("use client certificate/password {}/********", clientCertificate);
         this.clientCertificate = clientCertificate;
         this.keyPassword = keyPassword;
     }
@@ -239,6 +258,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @param password password
      */
     public void setUsernamePassword(String username, String password) {
+        LOG.debug("use username/password {}/********", username);
         userPassCredentialsProvider = new BasicCredentialsProvider();
         userPassCredentialsProvider.setCredentials(AuthScope.ANY,
             new UsernamePasswordCredentials(username, password));
@@ -254,6 +274,8 @@ public class WebServiceCommunication extends EntityCommunication {
 
     @Override
     public void connect() throws Exception {
+        this.disconnect();
+
         SSLContextBuilder contextBuilder = SSLContexts.custom();
         contextBuilder.loadTrustMaterial(null, acceptingTrustStrategy);
 
@@ -262,11 +284,11 @@ public class WebServiceCommunication extends EntityCommunication {
 
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
-            .setKeepAliveStrategy(this.keepAliveStrategy)
+            .setKeepAliveStrategy(keepAliveStrategy)
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
             .setRedirectStrategy(new LaxRedirectStrategy());
 
-        if (this.userPassCredentialsProvider != null) {
+        if (userPassCredentialsProvider != null) {
             httpClientBuilder.addInterceptorFirst(preemptiveAuth);
         }
 
@@ -279,7 +301,7 @@ public class WebServiceCommunication extends EntityCommunication {
             }
         }
 
-        if ("https".equals(this.httpHost.getSchemeName())) {
+        if ("https".equals(httpHost.getSchemeName())) {
             SSLContext sslContext = contextBuilder.build();
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
             registryBuilder.register("https", sslsf);
@@ -297,7 +319,9 @@ public class WebServiceCommunication extends EntityCommunication {
 
     @Override
     public void disconnect() throws Exception {
-        this.client.close();
+        if (this.client != null) {
+            this.client.close();
+        }
     }
 
     public JSONObject getJsonObject(String endpoint) throws IOException {
@@ -547,27 +571,20 @@ public class WebServiceCommunication extends EntityCommunication {
         return 30000;
     };
 
-    /*
-     * borrowed from https://subversion.jfrog.org/jfrog/build-info/trunk/build-info-client/src/main/java/org/jfrog/
-     * build/client/PreemptiveHttpClient.java
-     */
-    private final HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
-        @Override
-        public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
-            AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
-            if (authState.getAuthScheme() == null) {
-                AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
-                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
-                    HttpClientContext.CREDS_PROVIDER);
-                HttpHost targetHost = (HttpHost) context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
-                if (authScheme != null) {
-                    Credentials creds = credsProvider.getCredentials(
-                        new AuthScope(targetHost.getHostName(), targetHost.getPort()));
-                    if (creds == null) {
-                        throw new HttpException("No credentials for preemptive authentication");
-                    }
-                    authState.update(authScheme, creds);
+    private final HttpRequestInterceptor preemptiveAuth = (final HttpRequest request, final HttpContext context) -> {
+        AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
+        if (authState.getAuthScheme() == null) {
+            AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
+            CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(
+                HttpClientContext.CREDS_PROVIDER);
+            HttpHost targetHost = (HttpHost) context.getAttribute(HttpCoreContext.HTTP_TARGET_HOST);
+            if (authScheme != null) {
+                Credentials creds = credsProvider.getCredentials(
+                    new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+                if (creds == null) {
+                    throw new HttpException("No credentials for preemptive authentication");
                 }
+                authState.update(authScheme, creds);
             }
         }
     };
