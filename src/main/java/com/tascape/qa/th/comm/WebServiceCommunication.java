@@ -188,8 +188,8 @@ public class WebServiceCommunication extends EntityCommunication {
         if (host == null) {
             host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         }
-        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 0);
-        if (port == 0) {
+        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name);
+        if (port == Integer.MIN_VALUE) {
             port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
@@ -221,7 +221,7 @@ public class WebServiceCommunication extends EntityCommunication {
         wsc.connect();
         return wsc;
     }
-    
+
     public WebServiceCommunication(HttpHost httpHost) {
         this(httpHost.getHostName(), httpHost.getPort());
     }
