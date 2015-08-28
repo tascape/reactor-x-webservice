@@ -190,7 +190,7 @@ public class WebServiceCommunication extends EntityCommunication {
         }
         int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 0);
         if (port == 0) {
-            port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name, 443);
+            port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
 
@@ -220,6 +220,10 @@ public class WebServiceCommunication extends EntityCommunication {
 
         wsc.connect();
         return wsc;
+    }
+    
+    public WebServiceCommunication(HttpHost httpHost) {
+        this(httpHost.getHostName(), httpHost.getPort());
     }
 
     /**
@@ -520,6 +524,10 @@ public class WebServiceCommunication extends EntityCommunication {
 
     public static String decode(String param) throws UnsupportedEncodingException {
         return URLDecoder.decode(param, "UTF-8");
+    }
+
+    public HttpHost getHttpHost() {
+        return httpHost;
     }
 
     private void addHeaders(HttpRequest request) {
