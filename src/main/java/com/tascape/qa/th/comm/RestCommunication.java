@@ -47,8 +47,8 @@ public class RestCommunication extends EntityCommunication {
 
     @Override
     public void connect() throws Exception {
-        String host = SYSCONFIG.getProperty(RestCommunication.SYSPROP_HOST, "localhost");
-        int port = SYSCONFIG.getIntProperty(RestCommunication.SYSPROP_PORT, 443);
+        String host = sysConfig.getProperty(RestCommunication.SYSPROP_HOST, "localhost");
+        int port = sysConfig.getIntProperty(RestCommunication.SYSPROP_PORT, 443);
         RestAssured.useRelaxedHTTPSValidation();
         this.reqSpec = RestAssured.given();
 
@@ -58,14 +58,14 @@ public class RestCommunication extends EntityCommunication {
             this.reqSpec = this.reqSpec.baseUri("http://" + host + ":" + port);
         }
 
-        String user = SYSCONFIG.getProperty(RestCommunication.SYSPROP_USER);
-        String pass = SYSCONFIG.getProperty(RestCommunication.SYSPROP_PASS);
+        String user = sysConfig.getProperty(RestCommunication.SYSPROP_USER);
+        String pass = sysConfig.getProperty(RestCommunication.SYSPROP_PASS);
         if (null != user && null != pass) {
             this.reqSpec = this.reqSpec.auth().preemptive().basic(user, pass);
         }
 
-        String clientCert = SYSCONFIG.getProperty(RestCommunication.SYSPROP_CLIENT_CERT);
-        String clientCertPass = SYSCONFIG.getProperty(RestCommunication.SYSPROP_CLIENT_CERT_PASS);
+        String clientCert = sysConfig.getProperty(RestCommunication.SYSPROP_CLIENT_CERT);
+        String clientCertPass = sysConfig.getProperty(RestCommunication.SYSPROP_CLIENT_CERT_PASS);
         if (null != clientCert && null != clientCertPass) {
             this.reqSpec = this.reqSpec.auth().certificate(clientCert, clientCertPass);
         }

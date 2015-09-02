@@ -15,6 +15,7 @@
  */
 package com.tascape.qa.th.comm;
 
+import com.tascape.qa.th.SystemConfiguration;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -146,18 +147,19 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws Exception if having problem connecting to the service
      */
     public static WebServiceCommunication newInstance() throws Exception {
-        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
-        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
+        SystemConfiguration sysConfig = SystemConfiguration.getInstance();
+        String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
+        int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
 
-        String user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER);
-        String pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS);
+        String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
+        String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         if (null != user && null != pass) {
             wsc.setUsernamePassword(user, pass);
         }
 
-        String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
-        String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
+        String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
+        String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
         if (null != clientCert && null != clientCertPass) {
             wsc.setClientCertificate(clientCert, clientCertPass);
         }
@@ -184,35 +186,36 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws Exception if having problem connecting to the service
      */
     public static WebServiceCommunication newInstance(String name) throws Exception {
-        String host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name);
+        SystemConfiguration sysConfig = SystemConfiguration.getInstance();
+        String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name);
         if (host == null) {
-            host = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
+            host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         }
-        int port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name);
+        int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name);
         if (port == Integer.MIN_VALUE) {
-            port = SYSCONFIG.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
+            port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
 
-        String user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
+        String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
         if (user == null) {
-            user = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_USER);
+            user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
         }
-        String pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS + "." + name);
+        String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS + "." + name);
         if (pass == null) {
-            pass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_PASS);
+            pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         }
         if (null != user && null != pass) {
             wsc.setUsernamePassword(user, pass);
         }
 
-        String clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
+        String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
         if (clientCert == null) {
-            clientCert = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
+            clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
         }
-        String clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + "." + name);
+        String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + "." + name);
         if (clientCertPass == null) {
-            clientCertPass = SYSCONFIG.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
+            clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
         }
         if (null != clientCert && null != clientCertPass) {
             wsc.setClientCertificate(clientCert, clientCertPass);
