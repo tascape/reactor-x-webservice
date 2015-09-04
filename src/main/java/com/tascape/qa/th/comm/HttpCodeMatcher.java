@@ -29,6 +29,9 @@ public class HttpCodeMatcher extends BaseMatcher<WebServiceException> {
 
     private final int httpCode;
 
+    /**
+     * @param httpCode HTTP response code
+     */
     public HttpCodeMatcher(int httpCode) {
         this.httpCode = httpCode;
     }

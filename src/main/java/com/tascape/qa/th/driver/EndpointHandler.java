@@ -22,6 +22,7 @@ import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.nio.protocol.BasicAsyncRequestConsumer;
 import org.apache.http.nio.protocol.BasicAsyncResponseProducer;
@@ -39,14 +40,55 @@ import org.slf4j.LoggerFactory;
 public abstract class EndpointHandler extends EntityDriver implements HttpAsyncRequestHandler<HttpRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(EndpointHandler.class);
 
+    /**
+     * Gets the endpoint the class handles.
+     *
+     * @return endpoint string
+     */
     public abstract String getEndpoint();
 
+    /**
+     * Handles GET requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
     public abstract void handleGet(HttpRequest request, HttpResponse response) throws HttpException, IOException;
 
+    /**
+     * Handles POST requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
     public abstract void handlePost(HttpRequest request, HttpResponse response) throws HttpException, IOException;
 
+    /**
+     * Handles PUT requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
     public abstract void handlePut(HttpRequest request, HttpResponse response) throws HttpException, IOException;
 
+    /**
+     * Handles DELETE requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
     public abstract void handleDelete(HttpRequest request, HttpResponse response) throws HttpException, IOException;
 
     @Override
@@ -57,6 +99,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
 
     @Override
     public void handle(HttpRequest request, HttpAsyncExchange hae, HttpContext hc) throws HttpException, IOException {
+        LOG.debug("{}", request);
         String method = request.getRequestLine().getMethod().toUpperCase();
         HttpResponse response = hae.getResponse();
         response.setStatusCode(HttpStatus.SC_OK);
@@ -78,9 +121,23 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
         hae.submitResponse(new BasicAsyncResponseProducer(response));
     }
 
+    /**
+     * Gets parameter value of request line.
+     *
+     * @param request HTTP request
+     * @param name    name of the request line parameter
+     *
+     * @return parameter value, only the first is returned if there are multiple values for the same name
+     *
+     * @throws URISyntaxException
+     */
     public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
-        return URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF_8").stream()
+        NameValuePair nv = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF-8").stream()
             .filter(param -> param.getName().equals(name))
-            .findFirst().get().getValue();
+            .findFirst().get();
+        if (nv == null) {
+            return null;
+        }
+        return nv.getValue();
     }
 }

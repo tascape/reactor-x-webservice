@@ -31,11 +31,19 @@ public class RestException extends IOException {
 
     private final int httpCode;
 
+    /**
+     * @param httpCode HTTP response code
+     * @param message  error message
+     */
     public RestException(int httpCode, String message) {
         super(message);
         this.httpCode = httpCode;
     }
 
+    /**
+     *
+     * @return HTTP response code
+     */
     public int getHttpCode() {
         return httpCode;
     }

@@ -31,20 +31,43 @@ import org.slf4j.LoggerFactory;
 public class RestCommunication extends EntityCommunication {
     private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
+    /**
+     * REST service host name or IP address
+     */
     public static final String SYSPROP_HOST = "qa.th.comm.rest.HOST";
 
+    /**
+     * REST service port
+     */
     public static final String SYSPROP_PORT = "qa.th.comm.rest.PORT";
 
+    /**
+     * Certificate used to authenticate REST service client
+     */
     public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.rest.CLIENT_CERT";
 
+    /**
+     * Passcode of client certificate
+     */
     public static final String SYSPROP_CLIENT_CERT_PASS = "qa.th.comm.rest.CLIENT_CERT_PASS";
 
+    /**
+     * REST service user name for basic authentication
+     */
     public static final String SYSPROP_USER = "qa.th.comm.rest.USER";
 
+    /**
+     * REST service user password for basic authentication
+     */
     public static final String SYSPROP_PASS = "qa.th.comm.rest.PASS";
 
     private RequestSpecification reqSpec;
 
+    /**
+     * Create a RequestSpecification object as template, with host/port, user/pass, and certificate info.
+     *
+     * @throws Exception
+     */
     @Override
     public void connect() throws Exception {
         String host = sysConfig.getProperty(RestCommunication.SYSPROP_HOST, "localhost");
@@ -90,6 +113,14 @@ public class RestCommunication extends EntityCommunication {
         return RestAssured.given(reqSpec);
     }
 
+    /**
+     *
+     * @param response HTTP response
+     *
+     * @return response body
+     *
+     * @throws IOException
+     */
     public static String checkResponse(Response response) throws IOException {
         String res = "";
         if (response.body() != null) {

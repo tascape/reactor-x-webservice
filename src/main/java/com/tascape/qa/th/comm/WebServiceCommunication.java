@@ -87,23 +87,42 @@ import org.slf4j.LoggerFactory;
 public class WebServiceCommunication extends EntityCommunication {
     private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
+    /**
+     * Web service host name or IP address
+     */
     public static final String SYSPROP_HOST = "qa.th.comm.ws.HOST";
 
+    /**
+     * Web service port number
+     */
     public static final String SYSPROP_PORT = "qa.th.comm.ws.PORT";
 
+    /**
+     * Certificate used to authenticate web service client
+     */
     public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.ws.CLIENT_CERT";
 
+    /**
+     * Passcode of client certificate
+     */
     public static final String SYSPROP_CLIENT_CERT_PASS = "qa.th.comm.ws.CLIENT_CERT_PASS";
 
+    /**
+     * Web service user name for basic authentication
+     */
     public static final String SYSPROP_USER = "qa.th.comm.ws.USER";
 
+    /**
+     * Web service user password for basic authentication
+     */
     public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
 
+    /**
+     * Web service user agent string
+     */
     public static String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
-
-    private final int port;
 
     private final HttpHost httpHost;
 
@@ -123,6 +142,15 @@ public class WebServiceCommunication extends EntityCommunication {
 
     private final Map<String, Long> responseTime = new HashMap<>();
 
+    /**
+     * Gets the response body as string of specified uri.
+     *
+     * @param uri http/https uri
+     *
+     * @return response body
+     *
+     * @throws IOException in case any IO related issue
+     */
     public static String getUri(String uri) throws IOException {
         CloseableHttpClient c = HttpClients.createDefault();
         HttpGet get = new HttpGet(uri);
@@ -225,17 +253,22 @@ public class WebServiceCommunication extends EntityCommunication {
         return wsc;
     }
 
+    /**
+     * Constructor.
+     *
+     * @param httpHost
+     */
     public WebServiceCommunication(HttpHost httpHost) {
         this(httpHost.getHostName(), httpHost.getPort());
     }
 
     /**
+     * Constructor.
      *
      * @param host host DNS name or IP
      * @param port https for *443, http for others
      */
     public WebServiceCommunication(String host, int port) {
-        this.port = port;
         if (port % 1000 == 443) {
             this.baseUri = "https://" + host + ":" + port;
             this.httpHost = new HttpHost(host, port, "https");
@@ -246,7 +279,7 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     * Call this to provide client certificate.
+     * Calls this to provide client certificate.
      *
      * @param clientCertificate client certificate file
      * @param keyPassword       client certificate password
@@ -258,7 +291,7 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     * Call this to provide username and password. This will use Basic authentication, with a header such as
+     * Calls this to provide username and password. This will use Basic authentication, with a header such as
      * "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
      *
      * @param username user name
@@ -275,10 +308,20 @@ public class WebServiceCommunication extends EntityCommunication {
         authCache.put(httpHost, basicAuth);
     }
 
+    /**
+     * Adds HTTP header for all HTTP requests.
+     *
+     * @param name  HTTP header name
+     * @param value HTTP heaser value
+     */
     public void setHeader(String name, String value) {
         this.headers.put(name, value);
     }
 
+    /**
+     *
+     * @throws Exception
+     */
     @Override
     public void connect() throws Exception {
         this.disconnect();
@@ -324,6 +367,9 @@ public class WebServiceCommunication extends EntityCommunication {
         this.client = httpClientBuilder.setConnectionManager(cm).build();
     }
 
+    /**
+     * @throws Exception in case of any issue
+     */
     @Override
     public void disconnect() throws Exception {
         if (this.client != null) {
@@ -331,38 +377,128 @@ public class WebServiceCommunication extends EntityCommunication {
         }
     }
 
+    /**
+     * Issues HTTP GET request, converts response body to a JSON object.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response body to a JSON object
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public JSONObject getJsonObject(String endpoint) throws IOException {
         return new JSONObject(this.get(endpoint, null, null));
     }
 
+    /**
+     * Issues HTTP GET request, converts response body to a JSON object.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body to a JSON object
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public JSONObject getJsonObject(String endpoint, String params) throws IOException {
         return new JSONObject(this.get(endpoint, params, null));
     }
 
+    /**
+     * Issues HTTP GET request, converts response body to a JSON object.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body to a JSON object
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public JSONObject getJsonObject(String endpoint, String params, String requestId) throws IOException {
         return new JSONObject(this.get(endpoint, params, requestId));
     }
 
+    /**
+     * Issues HTTP GET request, converts response body to a JSON array object.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response body to a JSON array object
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public JSONArray getJsonArray(String endpoint) throws IOException {
         return new JSONArray(this.get(endpoint, null, null));
     }
 
+    /**
+     * Issues HTTP GET request, converts response body to a JSON array object.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body to a JSON array object
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public JSONArray getJsonArray(String endpoint, String params) throws IOException {
         return new JSONArray(this.get(endpoint, params, null));
     }
 
-    public JSONArray getJsonArray(String endpoint, String params, String reqestId) throws IOException {
-        return new JSONArray(this.get(endpoint, params, reqestId));
+    /**
+     * Issues HTTP GET request, converts response body to a JSON array object.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body to a JSON array object
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public JSONArray getJsonArray(String endpoint, String params, String requestId) throws IOException {
+        return new JSONArray(this.get(endpoint, params, requestId));
     }
 
+    /**
+     * Issues HTTP GET request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String get(String endpoint) throws IOException {
         return this.get(endpoint, null);
     }
 
+    /**
+     * Issues HTTP GET request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String get(String endpoint, String params) throws IOException {
         return this.get(endpoint, params, null);
     }
 
+    /**
+     * Issues HTTP GET request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
@@ -378,14 +514,44 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    /**
+     * Issues HTTP DELETE request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String delete(String endpoint) throws IOException {
         return this.delete(endpoint, "");
     }
 
+    /**
+     * Issues HTTP DELETE request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String delete(String endpoint, String params) throws IOException {
         return this.delete(endpoint, params, "");
     }
 
+    /**
+     * Issues HTTP DELETE request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String delete(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("DELETE {}", url);
@@ -401,14 +567,47 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param json     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String postJson(String endpoint, JSONObject json) throws IOException {
         return this.postJson(endpoint, "", json);
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     * @param json     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String postJson(String endpoint, String params, JSONObject json) throws IOException {
         return this.postJson(endpoint, params, json, "");
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param json      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
@@ -428,18 +627,60 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String post(String endpoint) throws IOException {
         return this.post(endpoint, "");
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String post(String endpoint, String params) throws IOException {
         return this.post(endpoint, params, "");
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     * @param body     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String post(String endpoint, String params, String body) throws IOException {
         return this.post(endpoint, params, body, "");
     }
 
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param body      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("POST {}", url);
@@ -459,14 +700,47 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param json     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String putJson(String endpoint, JSONObject json) throws IOException {
         return this.putJson(endpoint, "", json);
     }
 
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     * @param json     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String putJson(String endpoint, String params, JSONObject json) throws IOException {
         return this.putJson(endpoint, params, json, "");
     }
 
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param json      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
@@ -486,14 +760,47 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
-    public String put(String endpoint, String param) throws IOException {
-        return this.put(endpoint, param, "");
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String put(String endpoint, String params) throws IOException {
+        return this.put(endpoint, params, "");
     }
 
-    public String put(String endpoint, String param, String body) throws IOException {
-        return this.put(endpoint, param, body, "");
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     * @param body     request body
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String put(String endpoint, String params, String body) throws IOException {
+        return this.put(endpoint, params, body, "");
     }
 
+    /**
+     * Issues HTTP PUT request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param body      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("PUT {}", url);
@@ -513,22 +820,57 @@ public class WebServiceCommunication extends EntityCommunication {
         return WebServiceCommunication.checkResponse(response);
     }
 
+    /**
+     * Gets response time previously recorded.
+     *
+     * @param reqId request id
+     *
+     * @return time in millisecond
+     */
     public Long getResponseTime(String reqId) {
         return responseTime.get(reqId);
     }
 
+    /**
+     * Clears response time previously recorded.
+     *
+     * @param reqId request id
+     */
     public void clearResponseTime(String reqId) {
         this.responseTime.remove(reqId);
     }
 
+    /**
+     * Encodes with UTF-8.
+     *
+     * @param param string to encode
+     *
+     * @return UTF-8 encoded string
+     *
+     * @throws UnsupportedEncodingException if UTF-8 is not supported
+     */
     public static String encode(String param) throws UnsupportedEncodingException {
         return URLEncoder.encode(param, "UTF-8");
     }
 
+    /**
+     * Encodes with UTF-8.
+     *
+     * @param param string to decode
+     *
+     * @return UTF-8 decoded string
+     *
+     * @throws UnsupportedEncodingException if UTF-8 is not supported
+     */
     public static String decode(String param) throws UnsupportedEncodingException {
         return URLDecoder.decode(param, "UTF-8");
     }
 
+    /**
+     * Gets the host name and port.
+     *
+     * @return HTTPHost
+     */
     public HttpHost getHttpHost() {
         return httpHost;
     }
