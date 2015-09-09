@@ -120,7 +120,7 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Web service user agent string
      */
-    public static String USER_AGENT
+    public static final String USER_AGENT
         = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
 
@@ -154,7 +154,7 @@ public class WebServiceCommunication extends EntityCommunication {
     public static String getUri(String uri) throws IOException {
         CloseableHttpClient c = HttpClients.createDefault();
         HttpGet get = new HttpGet(uri);
-        LOG.debug("get {}", uri);
+        LOG.debug("GET {}", uri);
         CloseableHttpResponse res = c.execute(get, HttpClientContext.create());
         return checkResponse(res);
     }
@@ -256,7 +256,7 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Constructor.
      *
-     * @param httpHost
+     * @param httpHost HTTP host info
      */
     public WebServiceCommunication(HttpHost httpHost) {
         this(httpHost.getHostName(), httpHost.getPort());
@@ -320,7 +320,7 @@ public class WebServiceCommunication extends EntityCommunication {
 
     /**
      *
-     * @throws Exception
+     * @throws Exception in case of any issue
      */
     @Override
     public void connect() throws Exception {
@@ -329,7 +329,7 @@ public class WebServiceCommunication extends EntityCommunication {
         SSLContextBuilder contextBuilder = SSLContexts.custom();
         contextBuilder.loadTrustMaterial(null, acceptingTrustStrategy);
 
-        RegistryBuilder registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
+        RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
             .register("http", new PlainConnectionSocketFactory());
 
         HttpClientBuilder httpClientBuilder = HttpClients.custom()

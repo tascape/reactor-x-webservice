@@ -22,12 +22,13 @@ import java.io.IOException;
  * @author linsong wang
  */
 public class WebServiceException extends IOException {
+    private static final long serialVersionUID = 1L;
 
-    public static HttpCodeMatcher HTTP_400 = new HttpCodeMatcher(400);
+    public static final HttpCodeMatcher HTTP_400 = new HttpCodeMatcher(400);
 
-    public static HttpCodeMatcher HTTP_403 = new HttpCodeMatcher(403);
+    public static final HttpCodeMatcher HTTP_403 = new HttpCodeMatcher(403);
 
-    public static HttpCodeMatcher HTTP_404 = new HttpCodeMatcher(404);
+    public static final HttpCodeMatcher HTTP_404 = new HttpCodeMatcher(404);
 
     private final int httpCode;
 

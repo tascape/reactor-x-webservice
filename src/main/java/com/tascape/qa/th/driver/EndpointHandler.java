@@ -129,7 +129,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
      *
      * @return parameter value, only the first is returned if there are multiple values for the same name
      *
-     * @throws URISyntaxException
+     * @throws URISyntaxException in case of URL issue
      */
     public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
         NameValuePair nv = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF-8").stream()

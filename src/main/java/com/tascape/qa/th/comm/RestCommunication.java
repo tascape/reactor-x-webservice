@@ -66,7 +66,7 @@ public class RestCommunication extends EntityCommunication {
     /**
      * Create a RequestSpecification object as template, with host/port, user/pass, and certificate info.
      *
-     * @throws Exception
+     * @throws Exception in case of any issue
      */
     @Override
     public void connect() throws Exception {
@@ -119,7 +119,7 @@ public class RestCommunication extends EntityCommunication {
      *
      * @return response body
      *
-     * @throws IOException
+     * @throws IOException in case of any issue
      */
     public static String checkResponse(Response response) throws IOException {
         String res = "";

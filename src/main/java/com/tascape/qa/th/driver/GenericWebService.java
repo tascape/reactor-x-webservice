@@ -62,7 +62,7 @@ public final class GenericWebService extends EntityDriver {
 
     private final HttpAsyncService protocolHandler;
 
-    ListeningIOReactor ioReactor;
+    private ListeningIOReactor ioReactor;
 
     public GenericWebService(int port) {
         this.port = port;
