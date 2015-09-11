@@ -20,14 +20,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpException;
@@ -47,12 +51,14 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
@@ -66,6 +72,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.protocol.HTTP;
@@ -149,14 +156,48 @@ public class WebServiceCommunication extends EntityCommunication {
      *
      * @return response body
      *
-     * @throws IOException in case any IO related issue
+     * @throws IOException                            in case of any IO related issue
+     * @throws java.security.GeneralSecurityException in case of any security related issue
      */
-    public static String getUri(String uri) throws IOException {
-        CloseableHttpClient c = HttpClients.createDefault();
+    public static String getUri(String uri) throws IOException, GeneralSecurityException {
+        CloseableHttpClient c = newHttpClient(new URL(uri));
         HttpGet get = new HttpGet(uri);
         LOG.debug("GET {}", uri);
         CloseableHttpResponse res = c.execute(get, HttpClientContext.create());
         return checkResponse(res);
+    }
+
+    /**
+     * Gets the response headers of specified uri.
+     *
+     * @param uri http/https uri
+     *
+     * @return response headers
+     *
+     * @throws IOException                            in case of any IO related issue
+     * @throws java.security.GeneralSecurityException in case of any security related issue
+     */
+    public static Header[] headUri(String uri) throws IOException, GeneralSecurityException {
+        CloseableHttpClient c = newHttpClient(new URL(uri));
+        HttpHead head = new HttpHead(uri);
+        LOG.debug("HEAD {}", uri);
+        CloseableHttpResponse res = c.execute(head, HttpClientContext.create());
+        return res.getAllHeaders();
+    }
+
+    /**
+     * Gets the response header value of specified uri.
+     *
+     * @param uri  http/https uri
+     * @param name header name
+     *
+     * @return response header value
+     *
+     * @throws IOException                            in case of any IO related issue
+     * @throws java.security.GeneralSecurityException in case of any security related issue
+     */
+    public static String headUri(String uri, String name) throws IOException, GeneralSecurityException {
+        return Stream.of(headUri(uri)).filter(h -> h.getName().equals(name)).findFirst().get().getValue();
     }
 
     /**
@@ -375,6 +416,41 @@ public class WebServiceCommunication extends EntityCommunication {
         if (this.client != null) {
             this.client.close();
         }
+    }
+
+    /**
+     * Issues HTTP HEAD request, returns response headers.
+     *
+     * @param endpoint endpoint of request url
+     *
+     * @return response headers
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public Header[] head(String endpoint) throws IOException {
+        return this.head(endpoint, "");
+    }
+
+    /**
+     * Issues HTTP HEAD request, returns response headers.
+     *
+     * @param endpoint endpoint of request url
+     * @param params   request line parameters
+     *
+     * @return response headers
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public Header[] head(String endpoint, String params) throws IOException {
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        LOG.debug("HEAD {}", url);
+        HttpHead head = new HttpHead(url);
+
+        this.addHeaders(head);
+        HttpClientContext context = this.getHttpClientContext();
+        CloseableHttpResponse response = this.client.execute(head, context);
+        WebServiceCommunication.checkResponse(response);
+        return response.getAllHeaders();
     }
 
     /**
@@ -942,8 +1018,44 @@ public class WebServiceCommunication extends EntityCommunication {
         }
     };
 
+    private static CloseableHttpClient newHttpClient(URL url) throws GeneralSecurityException {
+        HttpClientBuilder httpClientBuilder = HttpClients.custom()
+            .setUserAgent(USER_AGENT)
+            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
+            .setRedirectStrategy(new LaxRedirectStrategy());
+
+        RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
+            .register("http", new PlainConnectionSocketFactory());
+        if ("https".equals(url.getProtocol())) {
+            SSLContextBuilder contextBuilder = SSLContexts.custom();
+            TrustStrategy ats = (X509Certificate[] certificate, String authType) -> true;
+            contextBuilder.loadTrustMaterial(null, ats);
+            SSLContext sslContext = contextBuilder.build();
+            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
+            registryBuilder.register("https", sslsf);
+            httpClientBuilder.setSSLSocketFactory(sslsf);
+        }
+
+        Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
+        HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);
+        return httpClientBuilder.setConnectionManager(cm).build();
+    }
+
     public static void main(String[] args) throws Exception {
-        WebServiceCommunication ws = new WebServiceCommunication("bit.ly", 80);
+        WebServiceCommunication ws = new WebServiceCommunication("ec2-54-226-209-194.compute-1.amazonaws.com", 9000);
+        ws.connect();
+        Header[] headers = ws.head("thr/dashboard.xhtml");
+        Stream.of(headers).forEach(h -> {
+            LOG.debug("{} = {}", h.getName(), h.getValue());
+        });
+
+        headers = WebServiceCommunication
+            .headUri("https://ec2-54-226-209-194.compute-1.amazonaws.com:9443/thr/dashboard.xhtml");
+        Stream.of(headers).forEach(h -> {
+            LOG.debug("{} = {}", h.getName(), h.getValue());
+        });
+
+        ws = new WebServiceCommunication("bit.ly", 80);
         ws.connect();
         String status = ws.get("1c1mBAI");
         LOG.info(status);
