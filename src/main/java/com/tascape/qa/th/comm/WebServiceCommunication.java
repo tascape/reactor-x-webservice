@@ -23,8 +23,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
@@ -156,10 +158,9 @@ public class WebServiceCommunication extends EntityCommunication {
      *
      * @return response body
      *
-     * @throws IOException                            in case of any IO related issue
-     * @throws java.security.GeneralSecurityException in case of any security related issue
+     * @throws IOException in case of any IO related issue
      */
-    public static String getUri(String uri) throws IOException, GeneralSecurityException {
+    public static String getUri(String uri) throws IOException {
         CloseableHttpClient c = newHttpClient(new URL(uri));
         HttpGet get = new HttpGet(uri);
         LOG.debug("GET {}", uri);
@@ -174,10 +175,9 @@ public class WebServiceCommunication extends EntityCommunication {
      *
      * @return response headers
      *
-     * @throws IOException                            in case of any IO related issue
-     * @throws java.security.GeneralSecurityException in case of any security related issue
+     * @throws IOException in case of any IO related issue
      */
-    public static Header[] headUri(String uri) throws IOException, GeneralSecurityException {
+    public static Header[] headUri(String uri) throws IOException {
         CloseableHttpClient c = newHttpClient(new URL(uri));
         HttpHead head = new HttpHead(uri);
         LOG.debug("HEAD {}", uri);
@@ -193,10 +193,9 @@ public class WebServiceCommunication extends EntityCommunication {
      *
      * @return response header value
      *
-     * @throws IOException                            in case of any IO related issue
-     * @throws java.security.GeneralSecurityException in case of any security related issue
+     * @throws IOException in case of any IO related issue
      */
-    public static String headUri(String uri, String name) throws IOException, GeneralSecurityException {
+    public static String headUri(String uri, String name) throws IOException {
         return Stream.of(headUri(uri)).filter(h -> h.getName().equals(name)).findFirst().get().getValue();
     }
 
@@ -1018,7 +1017,7 @@ public class WebServiceCommunication extends EntityCommunication {
         }
     };
 
-    private static CloseableHttpClient newHttpClient(URL url) throws GeneralSecurityException {
+    private static CloseableHttpClient newHttpClient(URL url) throws IOException {
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
@@ -1029,11 +1028,16 @@ public class WebServiceCommunication extends EntityCommunication {
         if ("https".equals(url.getProtocol())) {
             SSLContextBuilder contextBuilder = SSLContexts.custom();
             TrustStrategy ats = (X509Certificate[] certificate, String authType) -> true;
-            contextBuilder.loadTrustMaterial(null, ats);
-            SSLContext sslContext = contextBuilder.build();
-            SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
-            registryBuilder.register("https", sslsf);
-            httpClientBuilder.setSSLSocketFactory(sslsf);
+            try {
+                contextBuilder.loadTrustMaterial(null, ats);
+                SSLContext sslContext = contextBuilder.build();
+                SSLConnectionSocketFactory sslsf
+                    = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
+                registryBuilder.register("https", sslsf);
+                httpClientBuilder.setSSLSocketFactory(sslsf);
+            } catch (NoSuchAlgorithmException | KeyStoreException | KeyManagementException ex) {
+                throw new IOException(ex);
+            }
         }
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
