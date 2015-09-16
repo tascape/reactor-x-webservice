@@ -182,6 +182,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpHead head = new HttpHead(uri);
         LOG.debug("HEAD {}", uri);
         CloseableHttpResponse res = c.execute(head, HttpClientContext.create());
+        checkResponse(res);
         return res.getAllHeaders();
     }
 
