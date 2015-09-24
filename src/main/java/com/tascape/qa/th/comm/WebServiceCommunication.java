@@ -141,6 +141,10 @@ public class WebServiceCommunication extends EntityCommunication {
 
     private String keyPassword;
 
+    private String username;
+
+    private String password;
+
     private CredentialsProvider userPassCredentialsProvider;
 
     private AuthCache authCache;
@@ -275,7 +279,7 @@ public class WebServiceCommunication extends EntityCommunication {
             pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         }
         if (null != user && null != pass) {
-            wsc.setUsernamePassword(user, pass);
+            wsc.setBasicUsernamePassword(user, pass);
         }
 
         String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
@@ -338,8 +342,30 @@ public class WebServiceCommunication extends EntityCommunication {
      * @param username user name
      * @param password password
      */
+    @Deprecated
     public void setUsernamePassword(String username, String password) {
         LOG.debug("use username/password {}/********", username);
+        userPassCredentialsProvider = new BasicCredentialsProvider();
+        userPassCredentialsProvider.setCredentials(AuthScope.ANY,
+            new UsernamePasswordCredentials(username, password));
+
+        authCache = new BasicAuthCache();
+        BasicScheme basicAuth = new BasicScheme();
+        authCache.put(httpHost, basicAuth);
+    }
+
+    /**
+     * Calls this to provide username and password. This will use Basic authentication, with a header such as
+     * "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+     *
+     * @param username user name
+     * @param password password
+     */
+    public void setBasicUsernamePassword(String username, String password) {
+        this.username = username;
+        this.password = password;
+        LOG.debug("use basic username/password {}/********", username);
+
         userPassCredentialsProvider = new BasicCredentialsProvider();
         userPassCredentialsProvider.setCredentials(AuthScope.ANY,
             new UsernamePasswordCredentials(username, password));
@@ -949,6 +975,22 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public HttpHost getHttpHost() {
         return httpHost;
+    }
+
+    public String getClientCertificate() {
+        return clientCertificate;
+    }
+
+    public String getKeyPassword() {
+        return keyPassword;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     private void addHeaders(HttpRequest request) {
