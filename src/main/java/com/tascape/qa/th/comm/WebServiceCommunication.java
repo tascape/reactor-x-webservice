@@ -47,6 +47,7 @@ import org.apache.http.auth.AuthState;
 import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
@@ -69,6 +70,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -148,6 +150,8 @@ public class WebServiceCommunication extends EntityCommunication {
     private CredentialsProvider userPassCredentialsProvider;
 
     private AuthCache authCache;
+
+    private final CookieStore cookieStore = new BasicCookieStore();
 
     private CloseableHttpClient client;
 
@@ -379,7 +383,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * Adds HTTP header for all HTTP requests.
      *
      * @param name  HTTP header name
-     * @param value HTTP heaser value
+     * @param value HTTP header value
      */
     public void setHeader(String name, String value) {
         this.headers.put(name, value);
@@ -403,6 +407,7 @@ public class WebServiceCommunication extends EntityCommunication {
             .setUserAgent(USER_AGENT)
             .setKeepAliveStrategy(keepAliveStrategy)
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
+            .setDefaultCookieStore(this.cookieStore)
             .setRedirectStrategy(new LaxRedirectStrategy());
 
         if (userPassCredentialsProvider != null) {
@@ -475,7 +480,7 @@ public class WebServiceCommunication extends EntityCommunication {
         this.addHeaders(head);
         HttpClientContext context = this.getHttpClientContext();
         CloseableHttpResponse response = this.client.execute(head, context);
-        WebServiceCommunication.checkResponse(response);
+        check(response);
         return response.getAllHeaders();
     }
 
@@ -613,7 +618,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+        return check(response);
     }
 
     /**
@@ -666,7 +671,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+        return check(response);
     }
 
     /**
@@ -712,7 +717,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("POST {}", url);
+        LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -726,7 +731,9 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+
+        String res = check(response);
+        return res;
     }
 
     /**
@@ -785,7 +792,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("POST {}", url);
+        LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(body);
@@ -799,7 +806,8 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+        String res = check(response);
+        return res;
     }
 
     /**
@@ -845,7 +853,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("PUT {}", url);
+        LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(json.toString());
@@ -859,7 +867,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+        return check(response);
     }
 
     /**
@@ -905,7 +913,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
         String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("PUT {}", url);
+        LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(body);
@@ -919,7 +927,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        return WebServiceCommunication.checkResponse(response);
+        return check(response);
     }
 
     /**
@@ -993,6 +1001,10 @@ public class WebServiceCommunication extends EntityCommunication {
         return password;
     }
 
+    public CloseableHttpClient getClient() {
+        return client;
+    }
+
     private void addHeaders(HttpRequest request) {
         this.headers.entrySet().forEach(header -> {
             request.setHeader(header.getKey(), header.getValue());
@@ -1007,10 +1019,17 @@ public class WebServiceCommunication extends EntityCommunication {
             BasicScheme basicAuth = new BasicScheme();
             context.setAttribute("preemptive-auth", basicAuth);
         }
+        this.cookieStore.getCookies().forEach(c -> {
+            LOG.debug("outcoing {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
+        });
         return context;
     }
 
-    private static String checkResponse(CloseableHttpResponse response) throws IOException {
+    private String check(CloseableHttpResponse response) throws IOException {
+        this.cookieStore.getCookies().forEach(c -> {
+            LOG.debug("incoming {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
+        });
+
         String res = "";
         if (response.getEntity() != null) {
             res = EntityUtils.toString(response.getEntity());
@@ -1059,6 +1078,19 @@ public class WebServiceCommunication extends EntityCommunication {
             }
         }
     };
+
+    private static String checkResponse(CloseableHttpResponse response) throws IOException {
+        String res = "";
+        if (response.getEntity() != null) {
+            res = EntityUtils.toString(response.getEntity());
+        }
+        int code = response.getStatusLine().getStatusCode();
+        if (code < 200 || code >= 300) {
+            LOG.warn("{}", response.getStatusLine());
+            throw new WebServiceException(code, res);
+        }
+        return res;
+    }
 
     private static CloseableHttpClient newHttpClient(URL url) throws IOException {
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
