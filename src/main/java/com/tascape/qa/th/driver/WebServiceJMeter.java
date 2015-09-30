@@ -41,6 +41,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.apache.jmeter.modifiers.BeanShellPreProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,6 +110,10 @@ public class WebServiceJMeter extends EntityDriver {
         HashTree threadGroupHashTree = testPlanTree.add(testPlan, this.threadGroup);
         threadGroupHashTree.add(this.newHttpGetSampler(path));
 
+        BeanShellPreProcessor bs = new BeanShellPreProcessor();
+        bs.setScript("log.info('CUSTOM INFO log &quot')");
+        threadGroupHashTree.add(bs);
+
         File jmx = this.saveIntoFile("jmx", "xml", "");
         SaveService.saveTree(testPlanTree, new FileOutputStream(jmx));
 
@@ -173,7 +178,7 @@ public class WebServiceJMeter extends EntityDriver {
 
             WebServiceJMeter jm = new WebServiceJMeter();
             jm.setWebServiceCommunication(wsc);
-            jm.configureLoopThread(100, 30);
+            jm.configureLoopThread(10, 30);
 
             Summariser summer = jm.runGet("/thr/history.xhtml?interval=1&entries=30");
             SummariserRunningSample result = summer.getResult();
