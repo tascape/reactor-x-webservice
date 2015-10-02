@@ -36,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -799,6 +800,66 @@ public class WebServiceCommunication extends EntityCommunication {
         entity.setContentType("text/plain");
         post.setEntity(entity);
 
+        this.addHeaders(post);
+        HttpClientContext context = this.getHttpClientContext();
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(post, context);
+        if (!StringUtils.isBlank(requestId)) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        String res = check(response);
+        return res;
+    }
+
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     *
+     * @param endpoint endpoint of request url
+     * @param entity   request entity
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String postEntity(String endpoint, HttpEntity entity) throws IOException {
+        return this.postEntity(endpoint, "", entity, "");
+    }
+
+    /**
+     * Issues HTTP POST request, returns response body as string.
+     * http://www.baeldung.com/httpclient-multipart-upload
+     * <pre>
+     * {@code
+     * HttpPost post = new HttpPost("http://echo.200please.com");
+     * InputStream inputStream = new FileInputStream(zipFileName);
+     * File file = new File(imageFileName);
+     * String message = "This is a multipart post";
+     * MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+     * builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
+     * builder.addBinaryBody("upfile", file, ContentType.DEFAULT_BINARY, imageFileName);
+     * builder.addBinaryBody("upstream", inputStream, ContentType.create("application/zip"), zipFileName);
+     * builder.addTextBody("text", message, ContentType.TEXT_PLAIN);
+     *
+     * HttpEntity entity = builder.build();
+     * post.setEntity(entity);
+     * HttpResponse response = client.execute(post);
+     * }
+     * </pre>
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param entity    request entity
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String postEntity(String endpoint, String params, HttpEntity entity, String requestId) throws IOException {
+        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        LOG.debug("{} POST {}", this.hashCode(), url);
+        HttpPost post = new HttpPost(url);
+        post.setEntity(entity);
         this.addHeaders(post);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
