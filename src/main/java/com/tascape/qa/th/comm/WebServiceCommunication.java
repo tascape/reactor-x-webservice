@@ -1020,14 +1020,14 @@ public class WebServiceCommunication extends EntityCommunication {
             context.setAttribute("preemptive-auth", basicAuth);
         }
         this.cookieStore.getCookies().forEach(c -> {
-            LOG.debug("outcoing {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
+            LOG.trace("outgoing {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
         });
         return context;
     }
 
     private String check(CloseableHttpResponse response) throws IOException {
         this.cookieStore.getCookies().forEach(c -> {
-            LOG.debug("incoming {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
+            LOG.trace("incoming {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
         });
 
         String res = "";
