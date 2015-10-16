@@ -90,6 +90,7 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -497,7 +498,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint) throws IOException {
-        return new JSONObject(this.get(endpoint, null, null));
+        String res = this.get(endpoint, null, null);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -511,7 +518,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params) throws IOException {
-        return new JSONObject(this.get(endpoint, params, null));
+        String res = this.get(endpoint, params, null);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -526,7 +539,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params, String requestId) throws IOException {
-        return new JSONObject(this.get(endpoint, params, requestId));
+        String res = this.get(endpoint, params, requestId);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -539,7 +558,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint) throws IOException {
-        return new JSONArray(this.get(endpoint, null, null));
+        String res = this.get(endpoint, null, null);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -553,7 +578,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params) throws IOException {
-        return new JSONArray(this.get(endpoint, params, null));
+        String res = this.get(endpoint, params, null);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -568,7 +599,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params, String requestId) throws IOException {
-        return new JSONArray(this.get(endpoint, params, requestId));
+        String res = this.get(endpoint, params, requestId);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
