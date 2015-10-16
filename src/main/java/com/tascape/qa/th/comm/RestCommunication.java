@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * @author linsong wang
  */
 public class RestCommunication extends EntityCommunication {
-    private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestCommunication.class);
 
     /**
      * REST service host name or IP address
