@@ -56,6 +56,14 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
+        <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
+    </properties>
+
     <name>thx-webservice</name>
     <description>Testharness extension for web service related testing.</description>
     <url>https://github.com/tascape/testharness-x-webservice</url>
@@ -74,18 +82,10 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git@github.com:tascape/testharness-x-webservice.git</connection>
-        <developerConnection>scm:git:git@github.com:tascape/testharness-x-webservice.git</developerConnection>
-        <url>git:git@github.com:tascape/testharness-x-webservice.git</url>
+        <connection>scm:git:git@github.com:tascape/thx-webservice.git</connection>
+        <developerConnection>scm:git:git@github.com:tascape/thx-webservice.git</developerConnection>
+        <url>git:git@github.com:tascape/thx-webservice.git</url>
     </scm>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
-        <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
-    </properties>
 
     <build>
         <plugins>
