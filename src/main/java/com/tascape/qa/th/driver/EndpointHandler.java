@@ -16,14 +16,18 @@
 package com.tascape.qa.th.driver;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.nio.protocol.BasicAsyncRequestConsumer;
 import org.apache.http.nio.protocol.BasicAsyncResponseProducer;
 import org.apache.http.nio.protocol.HttpAsyncExchange;
@@ -40,56 +44,14 @@ import org.slf4j.LoggerFactory;
 public abstract class EndpointHandler extends EntityDriver implements HttpAsyncRequestHandler<HttpRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(EndpointHandler.class);
 
+    protected final Map<String, ResponseUpdater> responseUpdaterMap = new HashMap<>();
+
     /**
      * Gets the endpoint the class handles.
      *
      * @return endpoint string
      */
     public abstract String getEndpoint();
-
-    /**
-     * Handles GET requests.
-     *
-     * @param request  HTTP request
-     * @param response HTTP response
-     *
-     * @throws HttpException in case of HTTP related issue
-     * @throws IOException   in case of IO related issue
-     */
-    public abstract void handleGet(HttpRequest request, HttpResponse response) throws HttpException, IOException;
-
-    /**
-     * Handles POST requests.
-     *
-     * @param request  HTTP request
-     * @param response HTTP response
-     *
-     * @throws HttpException in case of HTTP related issue
-     * @throws IOException   in case of IO related issue
-     */
-    public abstract void handlePost(HttpRequest request, HttpResponse response) throws HttpException, IOException;
-
-    /**
-     * Handles PUT requests.
-     *
-     * @param request  HTTP request
-     * @param response HTTP response
-     *
-     * @throws HttpException in case of HTTP related issue
-     * @throws IOException   in case of IO related issue
-     */
-    public abstract void handlePut(HttpRequest request, HttpResponse response) throws HttpException, IOException;
-
-    /**
-     * Handles DELETE requests.
-     *
-     * @param request  HTTP request
-     * @param response HTTP response
-     *
-     * @throws HttpException in case of HTTP related issue
-     * @throws IOException   in case of IO related issue
-     */
-    public abstract void handleDelete(HttpRequest request, HttpResponse response) throws HttpException, IOException;
 
     @Override
     public HttpAsyncRequestConsumer<HttpRequest> processRequest(HttpRequest hr, HttpContext hc)
@@ -119,6 +81,103 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
         }
 
         hae.submitResponse(new BasicAsyncResponseProducer(response));
+    }
+
+    public void putResponseUpdater(String key, ResponseUpdater updater) {
+        this.responseUpdaterMap.put(key, updater);
+    }
+
+    public ResponseUpdater removeResponseUpdater(String key) {
+        return this.responseUpdaterMap.remove(key);
+    }
+
+    /**
+     * Handles GET requests by calling response updater based on uri pattern.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
+    public void handleGet(HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        String uri = request.getRequestLine().getUri();
+        try {
+            this.findResponseUpdater(request).update(response);
+        } catch (IllegalStateException t) {
+            LOG.error("Cannot handle request", t);
+            throw new HttpException("Cannot handle request", t);
+        }
+    }
+
+    /**
+     * Handles POST requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
+    public void handlePost(HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        this.warn(response);
+    }
+
+    /**
+     * Handles PUT requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
+    public void handlePut(HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        this.warn(response);
+    }
+
+    /**
+     * Handles DELETE requests.
+     *
+     * @param request  HTTP request
+     * @param response HTTP response
+     *
+     * @throws HttpException in case of HTTP related issue
+     * @throws IOException   in case of IO related issue
+     */
+    public void handleDelete(HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        this.warn(response);
+    }
+
+    @Override
+    public void reset() throws Exception {
+        this.responseUpdaterMap.clear();
+    }
+
+    /**
+     * Finds the first ResponseUpdater by url pattern match.
+     *
+     * @param request http request
+     *
+     * @return the corresponding ResponseUpdater
+     *
+     * @throws HttpException if no ResponseUpdater found
+     */
+    private ResponseUpdater findResponseUpdater(HttpRequest request) throws HttpException {
+        String uri = request.getRequestLine().getUri();
+        Map.Entry<String, ResponseUpdater> updater = this.responseUpdaterMap.entrySet().stream()
+            .filter(e -> uri.matches(e.getKey()))
+            .findFirst().get();
+        if (updater == null) {
+            throw new HttpException("cannot find correpsonding response udpater");
+        } else {
+            return updater.getValue();
+        }
+    }
+
+    private void warn(HttpResponse response) throws UnsupportedEncodingException {
+        response.setEntity(new NStringEntity("not implemented yet"));
+        response.setStatusCode(5000);
     }
 
     /**
