@@ -16,6 +16,7 @@
 package com.tascape.qa.th.driver;
 
 import com.tascape.qa.th.SystemConfiguration;
+import com.tascape.qa.th.comm.n.WebServiceCommunication;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;
@@ -56,6 +57,8 @@ public final class GenericWebService extends EntityDriver {
 
     public static final String SYSPROP_PORT = "qa.th.driver.ws.GWS_PORT";
 
+    public static final int XONSTANT_PORT = 10080;
+
     private final int port;
 
     private final UriHttpAsyncRequestHandlerMapper reqistry;
@@ -63,6 +66,13 @@ public final class GenericWebService extends EntityDriver {
     private final HttpAsyncService protocolHandler;
 
     private ListeningIOReactor ioReactor;
+
+    /**
+     * Server port is read from system property qa.th.driver.ws.GWS_PORT. Default value is 10080.
+     */
+    public GenericWebService() {
+        this(SystemConfiguration.getInstance().getIntProperty(SYSPROP_PORT, XONSTANT_PORT));
+    }
 
     public GenericWebService(int port) {
         this.port = port;
@@ -81,7 +91,7 @@ public final class GenericWebService extends EntityDriver {
 
     public void start() throws Exception {
         LOG.info("Register shutdown handler, GET http://localhost:{}/shutdown to shutdown this service", port);
-        this.registerResponseSimulator(new ShutdownService());
+        this.registerResponseSimulator(shutdownHandler);
 
         LOG.info("Create server-side HTTP protocol handler");
         NHttpConnectionFactory<DefaultNHttpServerConnection> connFactory
@@ -124,6 +134,23 @@ public final class GenericWebService extends EntityDriver {
         }
     }
 
+    public void startAsync() throws Exception {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    start();
+                } catch (Exception ex) {
+                    throw new RuntimeException();
+                }
+            }
+        }.start();
+    }
+
+    public void stop() throws IOException {
+        WebServiceCommunication.getUri("http://localhost:" + port + shutdownHandler.getEndpoint());
+    }
+
     public void registerResponseSimulator(EndpointHandler simulator)
         throws InstantiationException, IllegalAccessException {
         LOG.info("Register handler for endpoint {}: {}", simulator.getEndpoint(), simulator.getName());
@@ -156,7 +183,7 @@ public final class GenericWebService extends EntityDriver {
         LOG.info("nothing to reset");
     }
 
-    private class ShutdownService extends EndpointHandler {
+    private final EndpointHandler shutdownHandler = new EndpointHandler() {
         @Override
         public String getEndpoint() {
             return "/shutdown";
@@ -170,12 +197,7 @@ public final class GenericWebService extends EntityDriver {
 
         @Override
         public String getName() {
-            return ShutdownService.class.getName();
-        }
-
-        @Override
-        public void reset() throws Exception {
-            LOG.debug("NA");
+            return "ShutdownService";
         }
 
         @Override
@@ -192,11 +214,10 @@ public final class GenericWebService extends EntityDriver {
         public void handleDelete(HttpRequest request, HttpResponse response) throws HttpException, IOException {
             response.setStatusCode(HttpStatus.SC_NOT_ACCEPTABLE);
         }
-    }
+    };
 
     public static void main(String[] args) {
-        int port = SystemConfiguration.getInstance().getIntProperty(SYSPROP_PORT, 10080);
-        GenericWebService gws = new GenericWebService(port);
+        GenericWebService gws = new GenericWebService();
         try {
             gws.start();
         } catch (Exception ex) {

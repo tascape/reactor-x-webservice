@@ -102,8 +102,11 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
      */
     public void handleGet(HttpRequest request, HttpResponse response) throws HttpException, IOException {
         String uri = request.getRequestLine().getUri();
+        LOG.debug("uri {}", uri);
         try {
-            this.findResponseUpdater(request).update(response);
+            ResponseUpdater ru = this.findResponseUpdater(request);
+            LOG.debug("request updater {}", ru);
+            ru.update(response);
         } catch (IllegalStateException t) {
             LOG.error("Cannot handle request", t);
             throw new HttpException("Cannot handle request", t);
@@ -166,7 +169,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
     private ResponseUpdater findResponseUpdater(HttpRequest request) throws HttpException {
         String uri = request.getRequestLine().getUri();
         Map.Entry<String, ResponseUpdater> updater = this.responseUpdaterMap.entrySet().stream()
-            .filter(e -> uri.matches(e.getKey()))
+            .filter(e -> uri.contains(e.getKey()))
             .findFirst().get();
         if (updater == null) {
             throw new HttpException("cannot find correpsonding response udpater");
