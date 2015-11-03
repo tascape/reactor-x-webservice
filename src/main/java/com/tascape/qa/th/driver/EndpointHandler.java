@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 public abstract class EndpointHandler extends EntityDriver implements HttpAsyncRequestHandler<HttpRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(EndpointHandler.class);
 
-    protected final Map<String, ResponseUpdater> responseUpdaterMap = new HashMap<>();
+    protected final Set<ResponseUpdater> responseUpdaterSet = new HashSet<>();
 
     /**
      * Gets the endpoint the class handles.
@@ -83,12 +83,8 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
         hae.submitResponse(new BasicAsyncResponseProducer(response));
     }
 
-    public void putResponseUpdater(String key, ResponseUpdater updater) {
-        this.responseUpdaterMap.put(key, updater);
-    }
-
-    public ResponseUpdater removeResponseUpdater(String key) {
-        return this.responseUpdaterMap.remove(key);
+    public void addResponseUpdater(ResponseUpdater updater) {
+        this.responseUpdaterSet.add(updater);
     }
 
     /**
@@ -154,7 +150,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
 
     @Override
     public void reset() throws Exception {
-        this.responseUpdaterMap.clear();
+        this.responseUpdaterSet.clear();
     }
 
     /**
@@ -166,15 +162,14 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
      *
      * @throws HttpException if no ResponseUpdater found
      */
-    private ResponseUpdater findResponseUpdater(HttpRequest request) throws HttpException {
-        String uri = request.getRequestLine().getUri();
-        Map.Entry<String, ResponseUpdater> updater = this.responseUpdaterMap.entrySet().stream()
-            .filter(e -> uri.contains(e.getKey()))
+    private ResponseUpdater findResponseUpdater(final HttpRequest request) throws HttpException {
+        ResponseUpdater updater = this.responseUpdaterSet.stream()
+            .filter(ru -> ru.matches(request))
             .findFirst().get();
         if (updater == null) {
-            throw new HttpException("cannot find correpsonding response udpater");
+            throw new HttpException("cannot find correpsonding response updater");
         } else {
-            return updater.getValue();
+            return updater;
         }
     }
 

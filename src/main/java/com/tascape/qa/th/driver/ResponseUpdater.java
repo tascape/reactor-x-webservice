@@ -15,6 +15,7 @@
  */
 package com.tascape.qa.th.driver;
 
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 
 /**
@@ -23,6 +24,7 @@ import org.apache.http.HttpResponse;
  */
 public interface ResponseUpdater {
 
+    public boolean matches(HttpRequest request);
+
     public void update(HttpResponse response);
-    
 }
