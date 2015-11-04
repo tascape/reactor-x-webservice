@@ -139,9 +139,9 @@ public final class GenericWebService extends EntityDriver {
             @Override
             public void run() {
                 try {
-                    start();
+                    GenericWebService.this.start();
                 } catch (Exception ex) {
-                    throw new RuntimeException();
+                    throw new RuntimeException(ex);
                 }
             }
         }.start();
