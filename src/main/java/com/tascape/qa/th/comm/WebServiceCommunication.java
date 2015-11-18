@@ -96,6 +96,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Linsong Wang
  */
+@Deprecated
 public class WebServiceCommunication extends EntityCommunication {
     private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
