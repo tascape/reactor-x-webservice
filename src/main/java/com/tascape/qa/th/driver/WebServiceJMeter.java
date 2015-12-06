@@ -1,5 +1,5 @@
 /*
- * Copyright 2015.
+ * Copyright 2015 tascape.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.tascape.qa.th.driver;
 
 import com.tascape.qa.th.driver.jmeter.Summariser;
 import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.comm.WebServiceCommunication;
+import com.tascape.qa.th.comm.n.WebServiceCommunication;
 import com.tascape.qa.th.driver.jmeter.SummariserRunningSample;
 import java.io.File;
 import org.apache.jmeter.config.Arguments;
@@ -83,6 +83,16 @@ public class WebServiceJMeter extends EntityDriver {
         this.wsc = wsc;
     }
 
+    @Override
+    public String getName() {
+        return this.getClass().getSimpleName();
+    }
+
+    @Override
+    public String getVersion() {
+        return "1.0.0";
+    }
+
     public void configureLoopThread(int loop, int thread) throws IOException {
         LoopController loopController = new LoopController();
         loopController.setLoops(loop);
@@ -129,11 +139,6 @@ public class WebServiceJMeter extends EntityDriver {
         this.jmeter.run();
 
         return summary;
-    }
-
-    @Override
-    public String getName() {
-        return WebServiceJMeter.class.getName();
     }
 
     @Override
