@@ -410,7 +410,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
             .setKeepAliveStrategy(keepAliveStrategy)
-            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
             .setDefaultCookieStore(this.cookieStore)
             .setRedirectStrategy(new LaxRedirectStrategy());
         
