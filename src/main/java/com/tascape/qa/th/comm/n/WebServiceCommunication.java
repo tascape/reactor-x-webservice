@@ -138,30 +138,36 @@ public class WebServiceCommunication extends EntityCommunication {
     public static final String USER_AGENT
         = "Mozilla/5.0 (TestHarness; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
-    
+
+    private static String cookieSpec = CookieSpecs.DEFAULT;
+
     private final HttpHost httpHost;
-    
+
     private final String baseUri;
-    
+
     private String clientCertificate;
-    
+
     private String keyPassword;
-    
+
     private String username;
-    
+
     private String password;
-    
+
     private CredentialsProvider userPassCredentialsProvider;
-    
+
     private AuthCache authCache;
-    
+
     private final CookieStore cookieStore = new BasicCookieStore();
-    
+
     private CloseableHttpClient client;
-    
+
     private final Map<String, String> headers = new HashMap<>();
-    
+
     private final Map<String, Long> responseTime = new HashMap<>();
+
+    public static void setCookieSpec(String aCookieSpec) {
+        cookieSpec = aCookieSpec;
+    }
 
     /**
      * Gets the response body as string of specified uri.
@@ -232,19 +238,19 @@ public class WebServiceCommunication extends EntityCommunication {
         String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
-        
+
         String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
         String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         if (null != user && null != pass) {
             wsc.setBasicUsernamePassword(user, pass);
         }
-        
+
         String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
         String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
         if (null != clientCert && null != clientCertPass) {
             wsc.setClientCertificate(clientCert, clientCertPass);
         }
-        
+
         wsc.connect();
         return wsc;
     }
@@ -277,7 +283,7 @@ public class WebServiceCommunication extends EntityCommunication {
             port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
-        
+
         String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
         if (user == null) {
             user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
@@ -289,7 +295,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (null != user && null != pass) {
             wsc.setBasicUsernamePassword(user, pass);
         }
-        
+
         String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
         if (clientCert == null) {
             clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
@@ -301,7 +307,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (null != clientCert && null != clientCertPass) {
             wsc.setClientCertificate(clientCert, clientCertPass);
         }
-        
+
         wsc.connect();
         return wsc;
     }
@@ -356,7 +362,7 @@ public class WebServiceCommunication extends EntityCommunication {
         userPassCredentialsProvider = new BasicCredentialsProvider();
         userPassCredentialsProvider.setCredentials(AuthScope.ANY,
             new UsernamePasswordCredentials(username, password));
-        
+
         authCache = new BasicAuthCache();
         BasicScheme basicAuth = new BasicScheme();
         authCache.put(httpHost, basicAuth);
@@ -373,11 +379,11 @@ public class WebServiceCommunication extends EntityCommunication {
         this.username = username;
         this.password = password;
         LOG.debug("use basic username/password {}/********", username);
-        
+
         userPassCredentialsProvider = new BasicCredentialsProvider();
         userPassCredentialsProvider.setCredentials(AuthScope.ANY,
             new UsernamePasswordCredentials(username, password));
-        
+
         authCache = new BasicAuthCache();
         BasicScheme basicAuth = new BasicScheme();
         authCache.put(httpHost, basicAuth);
@@ -400,24 +406,24 @@ public class WebServiceCommunication extends EntityCommunication {
     @Override
     public void connect() throws Exception {
         this.disconnect();
-        
+
         SSLContextBuilder contextBuilder = SSLContexts.custom();
         contextBuilder.loadTrustMaterial(null, acceptingTrustStrategy);
-        
+
         RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
             .register("http", new PlainConnectionSocketFactory());
-        
+
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
             .setKeepAliveStrategy(keepAliveStrategy)
-            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
+            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(cookieSpec).build())
             .setDefaultCookieStore(this.cookieStore)
             .setRedirectStrategy(new LaxRedirectStrategy());
-        
+
         if (userPassCredentialsProvider != null) {
             httpClientBuilder.addInterceptorFirst(preemptiveAuth);
         }
-        
+
         if (clientCertificate != null && keyPassword != null) {
             LOG.debug("client cert {}", clientCertificate);
             try (FileInputStream instream = new FileInputStream(new File(clientCertificate))) {
@@ -426,20 +432,20 @@ public class WebServiceCommunication extends EntityCommunication {
                 contextBuilder.loadKeyMaterial(ks, keyPassword.toCharArray());
             }
         }
-        
+
         if ("https".equals(httpHost.getSchemeName())) {
             SSLContext sslContext = contextBuilder.build();
             SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(sslContext, new NoopHostnameVerifier());
             registryBuilder.register("https", sslsf);
             httpClientBuilder.setSSLSocketFactory(sslsf);
         }
-        
+
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(20);
         cm.setMaxPerRoute(new HttpRoute(httpHost), 200);
-        
+
         this.client = httpClientBuilder.setConnectionManager(cm).build();
     }
 
@@ -480,7 +486,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("HEAD {}", url);
         HttpHead head = new HttpHead(url);
-        
+
         this.addHeaders(head);
         HttpClientContext context = this.getHttpClientContext();
         CloseableHttpResponse response = this.client.execute(head, context);
@@ -650,7 +656,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
         HttpGet get = new HttpGet(url);
-        
+
         this.addHeaders(get);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -703,7 +709,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("DELETE {}", url);
         HttpDelete delete = new HttpDelete(url);
-        
+
         this.addHeaders(delete);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -759,11 +765,11 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
-        
+
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
         post.setEntity(entity);
-        
+
         this.addHeaders(post);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -771,7 +777,7 @@ public class WebServiceCommunication extends EntityCommunication {
         if (!StringUtils.isBlank(requestId)) {
             this.responseTime.put(requestId, System.currentTimeMillis() - start);
         }
-        
+
         String res = check(response);
         return res;
     }
@@ -834,11 +840,11 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
-        
+
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
         post.setEntity(entity);
-        
+
         this.addHeaders(post);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -955,11 +961,11 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
-        
+
         StringEntity entity = new StringEntity(json.toString());
         entity.setContentType("application/json");
         put.setEntity(entity);
-        
+
         this.addHeaders(put);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -1015,11 +1021,11 @@ public class WebServiceCommunication extends EntityCommunication {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
-        
+
         StringEntity entity = new StringEntity(body);
         entity.setContentType("text/plain");
         put.setEntity(entity);
-        
+
         this.addHeaders(put);
         HttpClientContext context = this.getHttpClientContext();
         long start = System.currentTimeMillis();
@@ -1084,33 +1090,33 @@ public class WebServiceCommunication extends EntityCommunication {
     public HttpHost getHttpHost() {
         return httpHost;
     }
-    
+
     public String getClientCertificate() {
         return clientCertificate;
     }
-    
+
     public String getKeyPassword() {
         return keyPassword;
     }
-    
+
     public String getUsername() {
         return username;
     }
-    
+
     public String getPassword() {
         return password;
     }
-    
+
     public CloseableHttpClient getClient() {
         return client;
     }
-    
+
     private void addHeaders(HttpRequest request) {
         this.headers.entrySet().forEach(header -> {
             request.setHeader(header.getKey(), header.getValue());
         });
     }
-    
+
     private HttpClientContext getHttpClientContext() {
         HttpClientContext context = HttpClientContext.create();
         if (this.userPassCredentialsProvider != null) {
@@ -1124,12 +1130,12 @@ public class WebServiceCommunication extends EntityCommunication {
         });
         return context;
     }
-    
+
     private String check(CloseableHttpResponse response) throws IOException {
         this.cookieStore.getCookies().forEach(c -> {
             LOG.trace("incoming {} {} {}", c.getName() + "=" + c.getValue(), c.getDomain(), c.getPath());
         });
-        
+
         String res = "";
         if (response.getEntity() != null) {
             res = EntityUtils.toString(response.getEntity());
@@ -1141,9 +1147,9 @@ public class WebServiceCommunication extends EntityCommunication {
         }
         return res;
     }
-    
+
     private final TrustStrategy acceptingTrustStrategy = (X509Certificate[] certificate, String authType) -> true;
-    
+
     private final ConnectionKeepAliveStrategy keepAliveStrategy = (HttpResponse response, HttpContext context) -> {
         HeaderElementIterator it = new BasicHeaderElementIterator(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
         while (it.hasNext()) {
@@ -1160,7 +1166,7 @@ public class WebServiceCommunication extends EntityCommunication {
         }
         return 30000;
     };
-    
+
     private final HttpRequestInterceptor preemptiveAuth = (final HttpRequest request, final HttpContext context) -> {
         AuthState authState = (AuthState) context.getAttribute(HttpClientContext.TARGET_AUTH_STATE);
         if (authState.getAuthScheme() == null) {
@@ -1178,7 +1184,7 @@ public class WebServiceCommunication extends EntityCommunication {
             }
         }
     };
-    
+
     private static String checkResponse(CloseableHttpResponse response) throws IOException {
         String res = "";
         if (response.getEntity() != null) {
@@ -1191,13 +1197,13 @@ public class WebServiceCommunication extends EntityCommunication {
         }
         return res;
     }
-    
+
     private static CloseableHttpClient newHttpClient(URL url) throws IOException {
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
             .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
             .setRedirectStrategy(new LaxRedirectStrategy());
-        
+
         RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
             .register("http", new PlainConnectionSocketFactory());
         if ("https".equals(url.getProtocol())) {
@@ -1214,12 +1220,12 @@ public class WebServiceCommunication extends EntityCommunication {
                 throw new IOException(ex);
             }
         }
-        
+
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
         HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);
         return httpClientBuilder.setConnectionManager(cm).build();
     }
-    
+
     public static void main(String[] args) throws Exception {
         WebServiceCommunication ws = new WebServiceCommunication("ec2-54-226-209-194.compute-1.amazonaws.com", 9000);
         ws.connect();
@@ -1227,13 +1233,13 @@ public class WebServiceCommunication extends EntityCommunication {
         Stream.of(headers).forEach(h -> {
             LOG.debug("{} = {}", h.getName(), h.getValue());
         });
-        
+
         headers = WebServiceCommunication
             .headUri("https://ec2-54-226-209-194.compute-1.amazonaws.com:9443/thr/dashboard.xhtml");
         Stream.of(headers).forEach(h -> {
             LOG.debug("{} = {}", h.getName(), h.getValue());
         });
-        
+
         ws = new WebServiceCommunication("bit.ly", 80);
         ws.connect();
         String status = ws.get("1c1mBAI");
