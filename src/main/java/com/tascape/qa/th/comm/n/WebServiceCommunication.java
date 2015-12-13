@@ -1,5 +1,5 @@
 /*
- * Copyright 2015.
+ * Copyright 2015 tascape.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -356,25 +356,6 @@ public class WebServiceCommunication extends EntityCommunication {
      * @param username user name
      * @param password password
      */
-    @Deprecated
-    public void setUsernamePassword(String username, String password) {
-        LOG.debug("use username/password {}/********", username);
-        userPassCredentialsProvider = new BasicCredentialsProvider();
-        userPassCredentialsProvider.setCredentials(AuthScope.ANY,
-            new UsernamePasswordCredentials(username, password));
-
-        authCache = new BasicAuthCache();
-        BasicScheme basicAuth = new BasicScheme();
-        authCache.put(httpHost, basicAuth);
-    }
-
-    /**
-     * Calls this to provide username and password. This will use Basic authentication, with a header such as
-     * "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-     *
-     * @param username user name
-     * @param password password
-     */
     public void setBasicUsernamePassword(String username, String password) {
         this.username = username;
         this.password = password;
@@ -390,13 +371,25 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     * Adds HTTP header for all HTTP requests.
+     * Adds HTTP header for all subsequent HTTP requests.
      *
      * @param name  HTTP header name
      * @param value HTTP header value
      */
     public void setHeader(String name, String value) {
         this.headers.put(name, value);
+    }
+
+    /**
+     * Removes HTTP header for all subsequent HTTP requests.
+     *
+     * @param name HTTP header name
+     *
+     * @return the previous header value associated with <tt>name</tt>, or <tt>null</tt> if there was no mapping for
+     * <tt>name</tt>.
+     */
+    public String removeHeader(String name) {
+        return this.headers.remove(name);
     }
 
     /**
