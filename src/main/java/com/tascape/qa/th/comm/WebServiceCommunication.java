@@ -1,5 +1,5 @@
 /*
- * Copyright 2015.
+ * Copyright 2016 tascape.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,7 @@ import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +97,6 @@ import org.slf4j.LoggerFactory;
  *
  * @author Linsong Wang
  */
-@Deprecated
 public class WebServiceCommunication extends EntityCommunication {
     private static final Logger LOG = LoggerFactory.getLogger(WebServiceCommunication.class);
 
@@ -134,8 +134,10 @@ public class WebServiceCommunication extends EntityCommunication {
      * Web service user agent string
      */
     public static final String USER_AGENT
-        = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
+        = "Mozilla/5.0 (TestHarness; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
+
+    private static String cookieSpec = CookieSpecs.DEFAULT;
 
     private final HttpHost httpHost;
 
@@ -160,6 +162,10 @@ public class WebServiceCommunication extends EntityCommunication {
     private final Map<String, String> headers = new HashMap<>();
 
     private final Map<String, Long> responseTime = new HashMap<>();
+
+    public static void setCookieSpec(String aCookieSpec) {
+        cookieSpec = aCookieSpec;
+    }
 
     /**
      * Gets the response body as string of specified uri.
@@ -234,7 +240,7 @@ public class WebServiceCommunication extends EntityCommunication {
         String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
         String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         if (null != user && null != pass) {
-            wsc.setUsernamePassword(user, pass);
+            wsc.setBasicUsernamePassword(user, pass);
         }
 
         String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
@@ -348,25 +354,6 @@ public class WebServiceCommunication extends EntityCommunication {
      * @param username user name
      * @param password password
      */
-    @Deprecated
-    public void setUsernamePassword(String username, String password) {
-        LOG.debug("use username/password {}/********", username);
-        userPassCredentialsProvider = new BasicCredentialsProvider();
-        userPassCredentialsProvider.setCredentials(AuthScope.ANY,
-            new UsernamePasswordCredentials(username, password));
-
-        authCache = new BasicAuthCache();
-        BasicScheme basicAuth = new BasicScheme();
-        authCache.put(httpHost, basicAuth);
-    }
-
-    /**
-     * Calls this to provide username and password. This will use Basic authentication, with a header such as
-     * "Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
-     *
-     * @param username user name
-     * @param password password
-     */
     public void setBasicUsernamePassword(String username, String password) {
         this.username = username;
         this.password = password;
@@ -382,13 +369,25 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
-     * Adds HTTP header for all HTTP requests.
+     * Adds HTTP header for all subsequent HTTP requests.
      *
      * @param name  HTTP header name
      * @param value HTTP header value
      */
     public void setHeader(String name, String value) {
         this.headers.put(name, value);
+    }
+
+    /**
+     * Removes HTTP header for all subsequent HTTP requests.
+     *
+     * @param name HTTP header name
+     *
+     * @return the previous header value associated with <tt>name</tt>, or <tt>null</tt> if there was no mapping for
+     * <tt>name</tt>.
+     */
+    public String removeHeader(String name) {
+        return this.headers.remove(name);
     }
 
     /**
@@ -408,7 +407,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpClientBuilder httpClientBuilder = HttpClients.custom()
             .setUserAgent(USER_AGENT)
             .setKeepAliveStrategy(keepAliveStrategy)
-            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.DEFAULT).build())
+            .setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(cookieSpec).build())
             .setDefaultCookieStore(this.cookieStore)
             .setRedirectStrategy(new LaxRedirectStrategy());
 
@@ -475,7 +474,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public Header[] head(String endpoint, String params) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("HEAD {}", url);
         HttpHead head = new HttpHead(url);
 
@@ -496,7 +495,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint) throws IOException {
-        return new JSONObject(this.get(endpoint, null, null));
+        String res = this.get(endpoint, null, null);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -510,7 +515,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params) throws IOException {
-        return new JSONObject(this.get(endpoint, params, null));
+        String res = this.get(endpoint, params, null);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -525,7 +536,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params, String requestId) throws IOException {
-        return new JSONObject(this.get(endpoint, params, requestId));
+        String res = this.get(endpoint, params, requestId);
+        try {
+            return new JSONObject(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -538,7 +555,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint) throws IOException {
-        return new JSONArray(this.get(endpoint, null, null));
+        String res = this.get(endpoint, null, null);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -552,7 +575,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params) throws IOException {
-        return new JSONArray(this.get(endpoint, params, null));
+        String res = this.get(endpoint, params, null);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -567,7 +596,13 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params, String requestId) throws IOException {
-        return new JSONArray(this.get(endpoint, params, requestId));
+        String res = this.get(endpoint, params, requestId);
+        try {
+            return new JSONArray(res);
+        } catch (JSONException ex) {
+            LOG.warn(res);
+            throw ex;
+        }
     }
 
     /**
@@ -609,7 +644,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String get(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("GET {}", url);
         HttpGet get = new HttpGet(url);
 
@@ -662,7 +697,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String delete(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("DELETE {}", url);
         HttpDelete delete = new HttpDelete(url);
 
@@ -718,7 +753,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
@@ -793,7 +828,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
@@ -857,7 +892,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String postEntity(String endpoint, String params, HttpEntity entity, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
         post.setEntity(entity);
@@ -914,7 +949,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 
@@ -974,7 +1009,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s/%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 

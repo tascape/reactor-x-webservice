@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 tascape.
+ * Copyright 2016 tascape.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ package com.tascape.qa.th.driver;
 
 import com.tascape.qa.th.driver.jmeter.Summariser;
 import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.comm.n.WebServiceCommunication;
+import com.tascape.qa.th.comm.WebServiceCommunication;
 import com.tascape.qa.th.driver.jmeter.SummariserRunningSample;
 import java.io.File;
 import org.apache.jmeter.config.Arguments;
