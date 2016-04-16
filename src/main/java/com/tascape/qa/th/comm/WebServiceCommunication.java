@@ -645,7 +645,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String get(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("GET {}", url);
+        LOG.debug("{} GET {}", this.hashCode(), url);
         HttpGet get = new HttpGet(url);
 
         this.addHeaders(get);
@@ -698,7 +698,7 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public String delete(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
-        LOG.debug("DELETE {}", url);
+        LOG.debug("{} DELETE {}", this.hashCode(), url);
         HttpDelete delete = new HttpDelete(url);
 
         this.addHeaders(delete);
