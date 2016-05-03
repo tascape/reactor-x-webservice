@@ -5,6 +5,6 @@ Testharness extension for web service API test automaton, based on Apache HttpCl
 <dependency>
 	<groupId>com.tascape.qa</groupId>
 	<artifactId>thx-webservice</artifactId>
-	<version>1.1.0</version>
+	<version>${version}</version>
 </dependency>
 ```
