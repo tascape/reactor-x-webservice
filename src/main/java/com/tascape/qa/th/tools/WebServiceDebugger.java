@@ -98,16 +98,22 @@ public class WebServiceDebugger implements WebServiceTest {
             jpContent.add(jpParameters, BorderLayout.CENTER);
 
             jtfHost.setText(host);
+            jtfHost.setToolTipText("-Dqa.th.comm.ws.HOST");
             addParameter("Host", jtfHost);
             jtfPort.setText(port + "");
+            jtfPort.setToolTipText("-Dqa.th.comm.ws.PORT");
             addParameter("Port", jtfPort);
             jtfUser.setText(user);
+            jtfUser.setToolTipText("-Dqa.th.comm.ws.USER");
             addParameter("User", jtfUser);
             jtfPass.setText(pass);
+            jtfPass.setToolTipText("-Dqa.th.comm.ws.PASS");
             addParameter("Pass", jtfPass);
             jtfClientCertFile.setText(clientCertFile);
+            jtfClientCertFile.setToolTipText("-Dqa.th.comm.ws.CLIENT_CERT");
             addParameter("Client Cert File", jtfClientCertFile);
             jtfClientCertPass.setText(clientCertPass);
+            jtfClientCertPass.setToolTipText("-Dqa.th.comm.ws.CLIENT_CERT_PASS");
             addParameter("Client Cert Pass", jtfClientCertPass);
             jsDebugMinutes.getEditor().setEnabled(false);
             addParameter("Interaction time (minute)", jsDebugMinutes);
@@ -175,11 +181,8 @@ public class WebServiceDebugger implements WebServiceTest {
     }
 
     public static void main(String[] args) {
-        String instruction = "Usage:\n"
-            + "java -cp $YOUR_CLASSPATH -Dqa.th.conf.files=$YOUR_CONF_FILE com.tascape.qa.th.tools.WebServiceDebugger";
-        LOG.info("--------\n{}", instruction);
-
         SystemConfiguration conf = SystemConfiguration.getInstance();
+
         WebServiceDebugger debugger = new WebServiceDebugger();
         debugger.host = conf.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         debugger.port = conf.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 8443);

@@ -33,8 +33,10 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -116,50 +118,53 @@ public interface WebServiceTest {
 
             jpInfo.add(new JLabel(info, SwingConstants.CENTER), BorderLayout.CENTER);
 
-            JPanel jpResponse = new JPanel(new BorderLayout());
             JPanel jpProgress = new JPanel(new BorderLayout());
-            jpResponse.add(jpProgress, BorderLayout.PAGE_START);
+            jpInfo.add(jpProgress, BorderLayout.PAGE_END);
 
-            JTextArea jtaResponse = new JTextArea();
-            jtaResponse.setEditable(false);
-            jtaResponse.setTabSize(4);
-            JScrollPane jsp = new JScrollPane(jtaResponse);
-            new SmartScroller(jsp);
-            jpResponse.add(jsp, BorderLayout.CENTER);
-
-            JPanel jpScreen = new JPanel(new BorderLayout());
-            JScrollPane jsp1 = new JScrollPane(jpScreen);
-//            jsp1.setPreferredSize(new Dimension(430, 600));
-            jpResponse.add(jsp1, BorderLayout.LINE_START);
-
-            JPanel jpJs = new JPanel(new BorderLayout());
-            JTextArea jtaJs = new JTextArea();
-            jpJs.add(new JScrollPane(jtaJs), BorderLayout.CENTER);
-
-            JSplitPane jSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, jpResponse, jpJs);
-            jSplitPane.setResizeWeight(0.8);
-            jpContent.add(jSplitPane, BorderLayout.CENTER);
-
-            JPanel jpLog = new JPanel();
-            jpLog.setLayout(new BoxLayout(jpLog, BoxLayout.LINE_AXIS));
-            jpResponse.add(jpLog, BorderLayout.PAGE_END);
+            JPanel jpRequest = new JPanel(new BorderLayout());
             {
-                String error = "Cannot send request";
+                JPanel jpHttp = new JPanel();
+                jpHttp.setLayout(new BoxLayout(jpHttp, BoxLayout.PAGE_AXIS));
+                jpRequest.add(jpHttp, BorderLayout.PAGE_START);
+
+                JPanel jpHttp1 = new JPanel();
+                jpHttp1.setLayout(new BoxLayout(jpHttp1, BoxLayout.LINE_AXIS));
+                jpHttp.add(jpHttp1);
+
+                JComboBox jcbMethods = new JComboBox(new String[]{"GET", "POST", "POST JSON", "PUT", "PUT JSON",
+                    "DELETE", "HEAD"});
+                jpHttp1.add(jcbMethods);
+                jpHttp1.add(Box.createHorizontalStrut(18));
+                jpHttp1.add(new JLabel("endpoint: "));
+                jpHttp1.add(Box.createHorizontalStrut(8));
+                JTextField jtfEndpoint = new JTextField();
+                jpHttp1.add(jtfEndpoint);
+
+                JPanel jpHttp2 = new JPanel();
+                jpHttp2.setLayout(new BoxLayout(jpHttp2, BoxLayout.LINE_AXIS));
+                jpHttp.add(jpHttp2);
+
+                jpHttp2.add(new JLabel("parameters: "));
+                jpHttp2.add(Box.createHorizontalStrut(8));
+                JTextField jtfParameters = new JTextField();
+                jpHttp2.add(jtfParameters);
+                jpHttp.add(Box.createHorizontalStrut(18));
                 JButton jbSend = new JButton("Send Request");
-                jpLog.add(jbSend);
+                jpHttp2.add(jbSend);
+
+                String error = "Cannot send request";
                 jbSend.addActionListener((ActionEvent event) -> {
                     Thread t = new Thread(tName) {
                         @Override
                         public void run() {
                             LOG.debug("\n\n");
                             try {
+                                // todo
                             } catch (Exception ex) {
                                 LOG.error(error, ex);
-                                jtaResponse.append(error);
                             } finally {
                                 jpContent.setCursor(Cursor.getDefaultCursor());
                             }
-                            jtaResponse.append("\n\n\n");
                             LOG.debug("\n\n");
                         }
                     };
@@ -170,8 +175,25 @@ public interface WebServiceTest {
                         LOG.error(error, ex);
                     }
                 });
+
+                JTextArea jtaContent = new JTextArea();
+                jtaContent.setTabSize(4);
+                JScrollPane jsp = new JScrollPane(jtaContent);
+                new SmartScroller(jsp);
+                jpRequest.add(jsp, BorderLayout.CENTER);
             }
-            jpLog.add(Box.createHorizontalStrut(20));
+
+            JPanel jpResponse = new JPanel(new BorderLayout());
+            JTextArea jtaResponse = new JTextArea();
+            {
+                JScrollPane jsp = new JScrollPane(jtaResponse);
+                new SmartScroller(jsp);
+                jpResponse.add(jsp, BorderLayout.CENTER);
+            }
+
+            JPanel jpLog = new JPanel();
+            jpLog.setLayout(new BoxLayout(jpLog, BoxLayout.LINE_AXIS));
+            jpResponse.add(jpLog, BorderLayout.PAGE_START);
             {
                 JButton jbLogMsg = new JButton("Log Message");
                 jpLog.add(jbLogMsg);
@@ -207,48 +229,12 @@ public interface WebServiceTest {
                 });
             }
 
-            JPanel jpAction = new JPanel();
-            jpContent.add(jpAction, BorderLayout.PAGE_END);
-            jpAction.setLayout(new BoxLayout(jpAction, BoxLayout.LINE_AXIS));
-            jpJs.add(jpAction, BorderLayout.PAGE_END);
-            {
-                JButton jbJavaScript = new JButton("Run");
-                jpAction.add(Box.createHorizontalGlue());
-                jpAction.add(jbJavaScript);
-                jbJavaScript.addActionListener(event -> {
-                    String js = jtaJs.getSelectedText();
-                    if (js == null) {
-                        js = jtaJs.getText();
-                    }
-                    if (StringUtils.isEmpty(js)) {
-                        return;
-                    }
-                    String javaScript = js;
-                    Thread t = new Thread(tName) {
-                        @Override
-                        public void run() {
-                        }
-                    };
-                    t.start();
-                    try {
-                        t.join();
-                    } catch (InterruptedException ex) {
-                        LOG.error("Cannot run", ex);
-                    }
-                });
-            }
-
             WebProgressBar jpb = new WebProgressBar(0, timeoutMinutes * 60);
             jpb.setIndeterminate(true);
             jpb.setIndeterminate(false);
             jpb.setStringPainted(true);
             jpb.setString("");
             jpProgress.add(jpb);
-
-            jf.pack();
-            jf.setVisible(true);
-            jf.setAlwaysOnTop(true);
-            jf.setLocationRelativeTo(null);
 
             ComponentUpdater.install(jpb, 1000, (ActionEvent e) -> {
                 int second = (int) (end - System.currentTimeMillis()) / 1000;
@@ -262,6 +248,36 @@ public interface WebServiceTest {
                     jpb.setForeground(Color.green.darker());
                 }
             });
+
+            JSplitPane jSplitPaneReqRes = new JSplitPane(JSplitPane.VERTICAL_SPLIT, jpRequest, jpResponse);
+            jSplitPaneReqRes.setResizeWeight(0.5);
+            jSplitPaneReqRes.setBorder(BorderFactory.createEtchedBorder());
+
+            JPanel jpHistory = new JPanel(new BorderLayout());
+            {
+                jpHistory.setBorder(BorderFactory.createEtchedBorder());
+                JList<String> jlHistory = new JList<>(new String[]{"req1", "re12"});
+                jpHistory.add(jlHistory, BorderLayout.CENTER);
+
+                JPanel jpButtons = new JPanel();
+                jpButtons.setLayout(new BoxLayout(jpButtons, BoxLayout.LINE_AXIS));
+                jpHistory.add(jpButtons, BorderLayout.PAGE_END);
+                JButton jbLoad = new JButton("Load History");
+                jpButtons.add(jbLoad);
+                jpButtons.add(Box.createHorizontalGlue());
+                JButton jbSave = new JButton("Save History");
+                jpButtons.add(jbSave);
+            }
+
+            JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jpHistory, jSplitPaneReqRes);
+            jSplitPane.setResizeWeight(0.2);
+            jSplitPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
+
+            jpContent.add(jSplitPane, BorderLayout.CENTER);
+            jf.pack();
+            jf.setVisible(true);
+            jf.setAlwaysOnTop(true);
+            jf.setLocationRelativeTo(null);
         });
 
         while (visible.get()) {
