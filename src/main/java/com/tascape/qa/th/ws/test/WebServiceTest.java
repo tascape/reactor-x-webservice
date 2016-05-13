@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.test;
+package com.tascape.qa.th.ws.test;
 
 import com.alee.laf.WebLookAndFeel;
 import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.utils.swing.ComponentUpdater;
-import com.tascape.qa.th.comm.WebServiceCommunication;
+import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.ui.SmartScroller;
 import java.awt.BorderLayout;
 import java.awt.Color;

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.comm;
+package com.tascape.qa.th.ws.comm;
 
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
+import com.tascape.qa.th.comm.EntityCommunication;
 import java.io.IOException;
 import javax.naming.OperationNotSupportedException;
 import org.slf4j.Logger;

@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.tools;
+package com.tascape.qa.th.ws.tools;
 
 import com.alee.laf.WebLookAndFeel;
 import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.comm.WebServiceCommunication;
-import com.tascape.qa.th.test.WebServiceTest;
+import com.tascape.qa.th.ws.comm.WebServiceCommunication;
+import com.tascape.qa.th.ws.test.WebServiceTest;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;

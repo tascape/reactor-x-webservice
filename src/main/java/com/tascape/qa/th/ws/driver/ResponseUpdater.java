@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.driver;
+package com.tascape.qa.th.ws.driver;
 
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
