@@ -22,18 +22,20 @@ import com.tascape.qa.th.comm.WebServiceCommunication;
 import com.tascape.qa.th.ui.SmartScroller;
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.IOException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -45,6 +47,10 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.Header;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,12 +88,23 @@ public interface WebServiceTest {
         String tName = Thread.currentThread().getName() + "m";
         SwingUtilities.invokeLater(() -> {
             WebLookAndFeel.install();
-            JFrame jf = new JFrame("Manual Web Service Interaction");
-            jf.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            JDialog jd = new JDialog((JFrame) null, "Manual Web Service Interaction");
+            jd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             JPanel jpContent = new JPanel(new BorderLayout());
-            jf.setContentPane(jpContent);
+            jd.setContentPane(jpContent);
             jpContent.setPreferredSize(new Dimension(1088, 828));
             jpContent.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+            JTextField jtfEndpoint = new JTextField();
+            JTextField jtfParameters = new JTextField();
+
+            JTextArea jtaContent = new JTextArea();
+            Font font = jtaContent.getFont();
+            jtaContent.setFont(new Font("Courier New", font.getStyle(), font.getSize()));
+
+            JTextArea jtaResponse = new JTextArea();
+            font = jtaResponse.getFont();
+            jtaResponse.setFont(new Font("Courier New", font.getStyle(), font.getSize()));
 
             JPanel jpInfo = new JPanel();
             jpContent.add(jpInfo, BorderLayout.PAGE_START);
@@ -99,7 +116,7 @@ public interface WebServiceTest {
                 jpInfo.add(jb, BorderLayout.LINE_START);
                 jb.addActionListener(event -> {
                     pass.set(true);
-                    jf.dispose();
+                    jd.dispose();
                     visible.set(false);
                 });
             }
@@ -111,7 +128,7 @@ public interface WebServiceTest {
                 jpInfo.add(jb, BorderLayout.LINE_END);
                 jb.addActionListener(event -> {
                     pass.set(false);
-                    jf.dispose();
+                    jd.dispose();
                     visible.set(false);
                 });
             }
@@ -131,13 +148,13 @@ public interface WebServiceTest {
                 jpHttp1.setLayout(new BoxLayout(jpHttp1, BoxLayout.LINE_AXIS));
                 jpHttp.add(jpHttp1);
 
-                JComboBox jcbMethods = new JComboBox(new String[]{"GET", "POST", "POST JSON", "PUT", "PUT JSON",
-                    "DELETE", "HEAD"});
+                String[] methods = new String[]{"GET", "GET JSONObject", "GET JSONArray", "POST", "POST JSONObject",
+                    "PUT", "PUT JSONObject", "DELETE", "HEAD"};
+                JComboBox<String> jcbMethods = new JComboBox<>(methods);
                 jpHttp1.add(jcbMethods);
                 jpHttp1.add(Box.createHorizontalStrut(18));
                 jpHttp1.add(new JLabel("endpoint: "));
                 jpHttp1.add(Box.createHorizontalStrut(8));
-                JTextField jtfEndpoint = new JTextField();
                 jpHttp1.add(jtfEndpoint);
 
                 JPanel jpHttp2 = new JPanel();
@@ -146,7 +163,6 @@ public interface WebServiceTest {
 
                 jpHttp2.add(new JLabel("parameters: "));
                 jpHttp2.add(Box.createHorizontalStrut(8));
-                JTextField jtfParameters = new JTextField();
                 jpHttp2.add(jtfParameters);
                 jpHttp.add(Box.createHorizontalStrut(18));
                 JButton jbSend = new JButton("Send Request");
@@ -158,25 +174,72 @@ public interface WebServiceTest {
                         @Override
                         public void run() {
                             LOG.debug("\n\n");
+                            String ep = jtfEndpoint.getText();
+                            String pm = jtfParameters.getText();
+                            String ct = jtaContent.getText();
+                            String requestId = UUID.randomUUID().toString();
+                            String res;
+                            JSONObject json;
+
+                            jtaResponse.setText("");
                             try {
-                                // todo
-                            } catch (Exception ex) {
+                                switch (methods[jcbMethods.getSelectedIndex()]) {
+                                    case "GET":
+                                        res = wsc.get(ep, pm, requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "GET JSONObject":
+                                        json = wsc.getJsonObject(ep, pm, requestId);
+                                        jtaResponse.setText(json.toString(2));
+                                        break;
+                                    case "GET JSONArray":
+                                        JSONArray jarr = wsc.getJsonArray(ep, pm, requestId);
+                                        jtaResponse.setText(jarr.toString(2));
+                                        break;
+                                    case "POST":
+                                        res = wsc.post(ep, pm, ct, requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "POST JSONObject":
+                                        res = wsc.postJson(ep, pm, new JSONObject(ct), requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "PUT":
+                                        res = wsc.put(ep, pm, ct, requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "PUT JSONObject":
+                                        res = wsc.putJson(ep, pm, new JSONObject(ct), requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "DELETE":
+                                        res = wsc.delete(ep, pm, requestId);
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case "HEAD":
+                                        for (Header h : wsc.head(ep, pm, requestId)) {
+                                            jtaResponse.append(h.getName() + ": " + h.getValue() + "\n");
+                                        }
+                                        break;
+                                }
+                            } catch (IOException | JSONException ex) {
                                 LOG.error(error, ex);
-                            } finally {
-                                jpContent.setCursor(Cursor.getDefaultCursor());
                             }
+                            long time = wsc.getResponseTime(requestId);
+                            jtaResponse.append("\n\nresponse time (ms) " + time);
                             LOG.debug("\n\n");
                         }
                     };
                     t.start();
+
                     try {
                         t.join();
                     } catch (InterruptedException ex) {
                         LOG.error(error, ex);
                     }
-                });
+                }
+                );
 
-                JTextArea jtaContent = new JTextArea();
                 jtaContent.setTabSize(4);
                 JScrollPane jsp = new JScrollPane(jtaContent);
                 new SmartScroller(jsp);
@@ -184,7 +247,6 @@ public interface WebServiceTest {
             }
 
             JPanel jpResponse = new JPanel(new BorderLayout());
-            JTextArea jtaResponse = new JTextArea();
             {
                 JScrollPane jsp = new JScrollPane(jtaResponse);
                 new SmartScroller(jsp);
@@ -274,10 +336,10 @@ public interface WebServiceTest {
             jSplitPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
             jpContent.add(jSplitPane, BorderLayout.CENTER);
-            jf.pack();
-            jf.setVisible(true);
-            jf.setAlwaysOnTop(true);
-            jf.setLocationRelativeTo(null);
+            jd.pack();
+            jd.setVisible(true);
+            jd.setAlwaysOnTop(true);
+            jd.setLocationRelativeTo(null);
         });
 
         while (visible.get()) {

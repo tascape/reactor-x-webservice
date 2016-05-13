@@ -24,12 +24,18 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Properties;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -38,6 +44,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +60,7 @@ public class WebServiceDebugger implements WebServiceTest {
 
     private String host = "localhost";
 
-    private JTextField jtfHost = new JTextField();
+    private final JTextField jtfHost = new JTextField();
 
     private int port = 8443;
 
@@ -82,12 +90,10 @@ public class WebServiceDebugger implements WebServiceTest {
 
     private final JPanel jpParameters = new JPanel();
 
-    private final JButton jbConnect = new JButton("Connect");
-
     private void start() throws Exception {
         SwingUtilities.invokeLater(() -> {
             WebLookAndFeel.install();
-            jd = new JDialog((JFrame) null, "Connect to Web Service");
+            jd = new JDialog((Frame) null, "Connect to Web Service");
             jd.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
             JPanel jpContent = new JPanel(new BorderLayout());
@@ -98,22 +104,22 @@ public class WebServiceDebugger implements WebServiceTest {
             jpContent.add(jpParameters, BorderLayout.CENTER);
 
             jtfHost.setText(host);
-            jtfHost.setToolTipText("-Dqa.th.comm.ws.HOST");
+            jtfHost.setToolTipText("-D" + WebServiceCommunication.SYSPROP_HOST);
             addParameter("Host", jtfHost);
             jtfPort.setText(port + "");
-            jtfPort.setToolTipText("-Dqa.th.comm.ws.PORT");
+            jtfPort.setToolTipText("-D" + WebServiceCommunication.SYSPROP_PORT);
             addParameter("Port", jtfPort);
             jtfUser.setText(user);
-            jtfUser.setToolTipText("-Dqa.th.comm.ws.USER");
+            jtfUser.setToolTipText("-D" + WebServiceCommunication.SYSPROP_USER);
             addParameter("User", jtfUser);
             jtfPass.setText(pass);
-            jtfPass.setToolTipText("-Dqa.th.comm.ws.PASS");
+            jtfPass.setToolTipText("-D" + WebServiceCommunication.SYSPROP_PASS);
             addParameter("Pass", jtfPass);
             jtfClientCertFile.setText(clientCertFile);
-            jtfClientCertFile.setToolTipText("-Dqa.th.comm.ws.CLIENT_CERT");
+            jtfClientCertFile.setToolTipText("-D" + WebServiceCommunication.SYSPROP_CLIENT_CERT);
             addParameter("Client Cert File", jtfClientCertFile);
             jtfClientCertPass.setText(clientCertPass);
-            jtfClientCertPass.setToolTipText("-Dqa.th.comm.ws.CLIENT_CERT_PASS");
+            jtfClientCertPass.setToolTipText("-D" + WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
             addParameter("Client Cert Pass", jtfClientCertPass);
             jsDebugMinutes.getEditor().setEnabled(false);
             addParameter("Interaction time (minute)", jsDebugMinutes);
@@ -123,8 +129,85 @@ public class WebServiceDebugger implements WebServiceTest {
             jpContent.add(jpInfo, BorderLayout.PAGE_END);
             jpInfo.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
             jpInfo.setLayout(new BoxLayout(jpInfo, BoxLayout.LINE_AXIS));
+
+            JButton jbLoad = new JButton("Load");
+            jbLoad.setToolTipText("load properties from a file");
+            jpInfo.add(jbLoad);
+            jbLoad.addActionListener(event -> {
+                JFileChooser chooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("Java Properties file", "properties");
+                chooser.setFileFilter(filter);
+                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                int returnVal = chooser.showOpenDialog(jd);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = chooser.getSelectedFile();
+                    LOG.debug("load properties from {}", file);
+                    Properties properties = new Properties();
+                    try (InputStream is = FileUtils.openInputStream(file)) {
+                        properties.load(is);
+                    } catch (IOException ex) {
+                        LOG.error("cannot load properties", ex);
+                    }
+                    String value = properties.getProperty(WebServiceCommunication.SYSPROP_HOST);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfHost.setText(value);
+                    }
+                    value = properties.getProperty(WebServiceCommunication.SYSPROP_PORT);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfPort.setText(value);
+                    }
+                    value = properties.getProperty(WebServiceCommunication.SYSPROP_USER);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfUser.setText(value);
+                    }
+                    value = properties.getProperty(WebServiceCommunication.SYSPROP_PASS);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfPass.setText(value);
+                    }
+                    value = properties.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfClientCertFile.setText(value);
+                    }
+                    value = properties.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
+                    if (StringUtils.isNotBlank(value)) {
+                        jtfClientCertPass.setText(value);
+                    }
+                }
+            });
+            jpInfo.add(Box.createHorizontalStrut(5));
+
+            JButton jbSave = new JButton("Save");
+            jbSave.setToolTipText("save current properties into a file");
+            jpInfo.add(jbSave);
+            jbSave.addActionListener(event -> {
+                JFileChooser chooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("Java Properties file", "properties");
+                chooser.setFileFilter(filter);
+                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+                int returnVal = chooser.showSaveDialog(jd);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = chooser.getSelectedFile();
+                    LOG.debug("load properties from {}", file);
+                    Properties properties = new Properties();
+                    properties.setProperty(WebServiceCommunication.SYSPROP_HOST, jtfHost.getText());
+                    properties.setProperty(WebServiceCommunication.SYSPROP_PORT, jtfPort.getText());
+                    properties.setProperty(WebServiceCommunication.SYSPROP_USER, jtfUser.getText());
+                    properties.setProperty(WebServiceCommunication.SYSPROP_PASS, new String(jtfPass.getPassword()));
+                    properties.setProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT, jtfClientCertFile.getText());
+                    properties.setProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS,
+                        new String(jtfClientCertPass.getPassword()));
+
+                    try (OutputStream os = FileUtils.openOutputStream(file)) {
+                        properties.store(os, "");
+                    } catch (IOException ex) {
+                        LOG.error("cannot save properties", ex);
+                    }
+                }
+            });
+            jpInfo.add(Box.createHorizontalGlue());
+
+            JButton jbConnect = new JButton("Connect");
             jbConnect.setFont(jbConnect.getFont().deriveFont(Font.BOLD));
-            jbConnect.setBorder(BorderFactory.createEtchedBorder());
             jpInfo.add(jbConnect);
             jbConnect.addActionListener(event -> {
                 new Thread() {
@@ -156,7 +239,7 @@ public class WebServiceDebugger implements WebServiceTest {
         } catch (Throwable ex) {
             LOG.error("Error", ex);
             jd.setCursor(Cursor.getDefaultCursor());
-            JOptionPane.showMessageDialog(jbConnect.getTopLevelAncestor(), "Cannot connect to service");
+            JOptionPane.showMessageDialog(jd, "Cannot connect to service");
             return;
         }
 
@@ -180,6 +263,7 @@ public class WebServiceDebugger implements WebServiceTest {
         jp.add(component);
     }
 
+    @SuppressWarnings("AccessingNonPublicFieldOfAnotherObject")
     public static void main(String[] args) {
         SystemConfiguration conf = SystemConfiguration.getInstance();
 

@@ -474,13 +474,32 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public Header[] head(String endpoint, String params) throws IOException {
+        return this.head(endpoint, params, "");
+    }
+
+    /**
+     * Issues HTTP HEAD request, returns response headers.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response headers
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public Header[] head(String endpoint, String params, String requestId) throws IOException {
         String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
         LOG.debug("HEAD {}", url);
         HttpHead head = new HttpHead(url);
 
         this.addHeaders(head);
         HttpClientContext context = this.getHttpClientContext();
+        long start = System.currentTimeMillis();
         CloseableHttpResponse response = this.client.execute(head, context);
+        if (!StringUtils.isBlank(requestId)) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
         check(response);
         return response.getAllHeaders();
     }
