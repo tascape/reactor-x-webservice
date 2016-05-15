@@ -43,10 +43,12 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.json.JSONArray;
@@ -89,6 +91,7 @@ public interface WebServiceTest {
         String tName = Thread.currentThread().getName() + "m";
         SwingUtilities.invokeLater(() -> {
             WebLookAndFeel.install();
+
             JDialog jd = new JDialog((JFrame) null, "Manual Web Service Interaction");
             jd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             JPanel jpContent = new JPanel(new BorderLayout());
@@ -162,6 +165,32 @@ public interface WebServiceTest {
                     Thread t = new Thread(tName) {
                         @Override
                         public void run() {
+                            JPanel jpHeaders = new JPanel(new BorderLayout());
+                            jpHeaders.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+                            DefaultTableModel tm = new DefaultTableModel(1, 2);
+                            tm.setColumnIdentifiers(new String[]{"Name", "Value"});
+                            wsc.getHeaders().entrySet().forEach(es -> {
+                                tm.insertRow(0, new String[]{es.getKey(), es.getValue()});
+                            });
+                            tm.addRow(new String[]{"aa", "bb"});
+
+                            JTable jt = new JTable(tm);
+                            jpHeaders.add(new JScrollPane(jt), BorderLayout.CENTER);
+
+                            JPanel jp = new JPanel();
+                            jpHeaders.add(jp, BorderLayout.PAGE_END);
+                            jp.setLayout(new BoxLayout(jp, BoxLayout.LINE_AXIS));
+                            JButton apply = new JButton("Apply");
+                            jp.add(Box.createHorizontalGlue());
+                            jp.add(apply);
+
+                            JDialog jd0 = new JDialog(jd, "HTTP Headers");
+                            jd0.setContentPane(jpHeaders);
+                            jd0.setModal(true);
+                            jd0.pack();
+                            jd0.setLocationRelativeTo(jd);
+                            jd0.setVisible(true);
                         }
                     };
                     t.start();
@@ -348,7 +377,6 @@ public interface WebServiceTest {
             jpContent.add(jSplitPane, BorderLayout.CENTER);
             jd.pack();
             jd.setVisible(true);
-            jd.setAlwaysOnTop(true);
             jd.setLocationRelativeTo(null);
         });
 

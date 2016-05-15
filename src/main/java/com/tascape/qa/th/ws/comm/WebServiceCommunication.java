@@ -383,6 +383,10 @@ public class WebServiceCommunication extends EntityCommunication {
         this.headers.put(name, value);
     }
 
+    public Map<String, String> getHeaders() {
+        return headers;
+    }
+
     /**
      * Removes HTTP header for all subsequent HTTP requests.
      *
