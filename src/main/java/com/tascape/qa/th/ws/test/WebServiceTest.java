@@ -156,6 +156,17 @@ public interface WebServiceTest {
                 jpHttp1.add(new JLabel("endpoint: "));
                 jpHttp1.add(Box.createHorizontalStrut(8));
                 jpHttp1.add(jtfEndpoint);
+                jpHttp1.add(Box.createHorizontalStrut(8));
+                JButton jbHeaders = new JButton("Headers");
+                jpHttp1.add(jbHeaders);
+                jbHeaders.addActionListener((ActionEvent event) -> {
+                    Thread t = new Thread(tName) {
+                        @Override
+                        public void run() {
+                        }
+                    };
+                    t.start();
+                });
 
                 JPanel jpHttp2 = new JPanel();
                 jpHttp2.setLayout(new BoxLayout(jpHttp2, BoxLayout.LINE_AXIS));

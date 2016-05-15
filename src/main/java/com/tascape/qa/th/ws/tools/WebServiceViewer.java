@@ -53,8 +53,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author linsong wang
  */
-public class WebServiceDebugger implements WebServiceTest {
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(WebServiceDebugger.class);
+public class WebServiceViewer implements WebServiceTest {
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(WebServiceViewer.class);
 
     private WebServiceCommunication wsc;
 
@@ -267,7 +267,7 @@ public class WebServiceDebugger implements WebServiceTest {
     public static void main(String[] args) {
         SystemConfiguration conf = SystemConfiguration.getInstance();
 
-        WebServiceDebugger debugger = new WebServiceDebugger();
+        WebServiceViewer debugger = new WebServiceViewer();
         debugger.host = conf.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         debugger.port = conf.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 8443);
         debugger.user = conf.getProperty(WebServiceCommunication.SYSPROP_USER, "");
