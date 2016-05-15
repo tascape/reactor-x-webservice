@@ -138,6 +138,10 @@ public class WebServiceCommunication extends EntityCommunication {
         = "Mozilla/5.0 (TestHarness; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
 
+    public enum HTTP_METHOD {
+        GET, GET_JSONObject, GET_JSONArray, POST, POST_JSONObject, PUT, PUT_JSONObject, DELETE, HEAD,
+    }
+
     private static String cookieSpec = CookieSpecs.DEFAULT;
 
     private final HttpHost httpHost;

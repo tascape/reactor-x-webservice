@@ -20,6 +20,7 @@ import com.alee.laf.progressbar.WebProgressBar;
 import com.alee.utils.swing.ComponentUpdater;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.ui.SmartScroller;
+import com.tascape.qa.th.ws.comm.WebServiceCommunication.HTTP_METHOD;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -148,9 +149,7 @@ public interface WebServiceTest {
                 jpHttp1.setLayout(new BoxLayout(jpHttp1, BoxLayout.LINE_AXIS));
                 jpHttp.add(jpHttp1);
 
-                String[] methods = new String[]{"GET", "GET JSONObject", "GET JSONArray", "POST", "POST JSONObject",
-                    "PUT", "PUT JSONObject", "DELETE", "HEAD"};
-                JComboBox<String> jcbMethods = new JComboBox<>(methods);
+                JComboBox<HTTP_METHOD> jcbMethods = new JComboBox<>(HTTP_METHOD.values());
                 jpHttp1.add(jcbMethods);
                 jpHttp1.add(Box.createHorizontalStrut(18));
                 jpHttp1.add(new JLabel("endpoint: "));
@@ -194,40 +193,40 @@ public interface WebServiceTest {
 
                             jtaResponse.setText("");
                             try {
-                                switch (methods[jcbMethods.getSelectedIndex()]) {
-                                    case "GET":
+                                switch ((HTTP_METHOD) jcbMethods.getSelectedItem()) {
+                                    case GET:
                                         res = wsc.get(ep, pm, requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "GET JSONObject":
+                                    case GET_JSONObject:
                                         json = wsc.getJsonObject(ep, pm, requestId);
                                         jtaResponse.setText(json.toString(2));
                                         break;
-                                    case "GET JSONArray":
+                                    case GET_JSONArray:
                                         JSONArray jarr = wsc.getJsonArray(ep, pm, requestId);
                                         jtaResponse.setText(jarr.toString(2));
                                         break;
-                                    case "POST":
+                                    case POST:
                                         res = wsc.post(ep, pm, ct, requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "POST JSONObject":
+                                    case POST_JSONObject:
                                         res = wsc.postJson(ep, pm, new JSONObject(ct), requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "PUT":
+                                    case PUT:
                                         res = wsc.put(ep, pm, ct, requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "PUT JSONObject":
+                                    case PUT_JSONObject:
                                         res = wsc.putJson(ep, pm, new JSONObject(ct), requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "DELETE":
+                                    case DELETE:
                                         res = wsc.delete(ep, pm, requestId);
                                         jtaResponse.setText(res);
                                         break;
-                                    case "HEAD":
+                                    case HEAD:
                                         for (Header h : wsc.head(ep, pm, requestId)) {
                                             jtaResponse.append(h.getName() + ": " + h.getValue() + "\n");
                                         }
