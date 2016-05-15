@@ -86,7 +86,7 @@
         <developerConnection>scm:git:git@github.com:tascape/thx-webservice.git</developerConnection>
         <url>git:git@github.com:tascape/thx-webservice.git</url>
     </scm>
-    
+
     <build>
         <plugins>
             <plugin>
