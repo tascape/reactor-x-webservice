@@ -17,8 +17,9 @@ package com.tascape.qa.th.ws.tools;
 
 import com.alee.laf.WebLookAndFeel;
 import com.tascape.qa.th.SystemConfiguration;
+import com.tascape.qa.th.ui.UiUtils;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
-import com.tascape.qa.th.ws.test.WebServiceTest;
+import com.tascape.qa.th.ws.driver.WebService;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -53,10 +54,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author linsong wang
  */
-public class WebServiceViewer implements WebServiceTest {
+public class WebServiceViewer extends WebService {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(WebServiceViewer.class);
-
-    private WebServiceCommunication wsc;
 
     private String host = "localhost";
 
@@ -90,11 +89,27 @@ public class WebServiceViewer implements WebServiceTest {
 
     private final JPanel jpParameters = new JPanel();
 
+    @Override
+    public String getName() {
+        return "na";
+    }
+
+    @Override
+    public String getVersion() {
+        return "0.0.0";
+    }
+
+    @Override
+    public void reset() throws Exception {
+        LOG.debug("na");
+    }
+
     private void start() throws Exception {
         SwingUtilities.invokeLater(() -> {
             WebLookAndFeel.install();
             jd = new JDialog((Frame) null, "Connect to Web Service");
             jd.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+            jd.setIconImages(UiUtils.getAvailableIconImages());
 
             JPanel jpContent = new JPanel(new BorderLayout());
             jd.setContentPane(jpContent);
@@ -246,7 +261,7 @@ public class WebServiceViewer implements WebServiceTest {
         debugMinutes = (int) jsDebugMinutes.getValue();
         jd.dispose();
         try {
-            this.testManually(wsc, debugMinutes);
+            this.interactManually(debugMinutes);
         } catch (Throwable ex) {
             LOG.error("Error", ex);
             System.exit(1);
@@ -267,16 +282,16 @@ public class WebServiceViewer implements WebServiceTest {
     public static void main(String[] args) {
         SystemConfiguration conf = SystemConfiguration.getInstance();
 
-        WebServiceViewer debugger = new WebServiceViewer();
-        debugger.host = conf.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
-        debugger.port = conf.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 8443);
-        debugger.user = conf.getProperty(WebServiceCommunication.SYSPROP_USER, "");
-        debugger.pass = conf.getProperty(WebServiceCommunication.SYSPROP_PASS, "");
-        debugger.clientCertFile = conf.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT, "");
-        debugger.clientCertPass = conf.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS, "");
+        WebServiceViewer viewer = new WebServiceViewer();
+        viewer.host = conf.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
+        viewer.port = conf.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 8443);
+        viewer.user = conf.getProperty(WebServiceCommunication.SYSPROP_USER, "");
+        viewer.pass = conf.getProperty(WebServiceCommunication.SYSPROP_PASS, "");
+        viewer.clientCertFile = conf.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT, "");
+        viewer.clientCertPass = conf.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS, "");
 
         try {
-            debugger.start();
+            viewer.start();
         } catch (Throwable ex) {
             LOG.error("", ex);
             System.exit(1);
