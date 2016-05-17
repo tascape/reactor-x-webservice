@@ -21,8 +21,10 @@ import com.alee.utils.swing.ComponentUpdater;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.driver.EntityDriver;
 import com.tascape.qa.th.ui.UiUtils;
+import com.tascape.qa.th.ws.comm.WebServiceCommunication.HTTP_METHOD;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -33,14 +35,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -54,7 +55,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.ListModel;
+import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
@@ -78,6 +79,9 @@ public abstract class WebService extends EntityDriver {
     private static final Logger LOG = LoggerFactory.getLogger(WebService.class);
 
     protected WebServiceCommunication wsc;
+
+    private final File historyDir = Paths.get(FileUtils.getUserDirectory().getAbsolutePath(), ".th", "ws-viewer")
+        .toFile();
 
     public void interactManually() throws Exception {
         WebService.this.interactManually(30);
@@ -110,18 +114,50 @@ public abstract class WebService extends EntityDriver {
             jpContent.setPreferredSize(new Dimension(1088, 828));
             jpContent.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
+            JComboBox<HTTP_METHOD> jcbMethods = new JComboBox<>(HTTP_METHOD.values());
             JTextField jtfEndpoint = new JTextField();
             JTextField jtfParameters = new JTextField();
 
-            JTextArea jtaContent = new JTextArea();
-            Font font = jtaContent.getFont();
-            jtaContent.setFont(new Font("Courier New", font.getStyle(), font.getSize()));
+            JTextArea jtaRequest = new JTextArea();
+            Font font = jtaRequest.getFont();
+            jtaRequest.setFont(new Font("Courier New", font.getStyle(), font.getSize()));
 
             JTextArea jtaResponse = new JTextArea();
             font = jtaResponse.getFont();
             jtaResponse.setFont(new Font("Courier New", font.getStyle(), font.getSize()));
 
-            JList<JSONObject> jlHistory = new JList<>(this.loadHistoryModel());
+            DefaultListModel<JSONObject> historyModel = this.loadHistoryModel();
+            JList<JSONObject> jlHistory = new JList<>(historyModel);
+            jlHistory.setCellRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                    boolean cellHasFocus) {
+                    setBackground(list.getBackground());
+                    JSONObject json = (JSONObject) value;
+                    setText(json.getString("endpoint"));
+                    setToolTipText(json.getString("endpoint"));
+                    if (isSelected) {
+                        setFont(getFont().deriveFont(Font.BOLD));
+                    } else {
+                        setFont(getFont().deriveFont(Font.PLAIN));
+                    }
+                    return this;
+                }
+            });
+            jlHistory.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            jlHistory.clearSelection();
+            jlHistory.getSelectionModel().addListSelectionListener(event -> {
+                ListSelectionModel lsm = (ListSelectionModel) event.getSource();
+                if (event.getValueIsAdjusting()) {
+                    return;
+                }
+                JSONObject json = historyModel.get(lsm.getMinSelectionIndex());
+                jcbMethods.setSelectedItem(HTTP_METHOD.valueOf(json.getString("method")));
+                jtfEndpoint.setText(json.getString("endpoint"));
+                jtfParameters.setText(json.getString("parameters"));
+                jtaRequest.setText(json.getString("req-body"));
+                jtaResponse.setText(json.getString("res-body"));
+            });
 
             JPanel jpInfo = new JPanel();
             jpContent.add(jpInfo, BorderLayout.PAGE_START);
@@ -165,8 +201,6 @@ public abstract class WebService extends EntityDriver {
                 jpHttp1.setLayout(new BoxLayout(jpHttp1, BoxLayout.LINE_AXIS));
                 jpHttp.add(jpHttp1);
 
-                JComboBox<WebServiceCommunication.HTTP_METHOD> jcbMethods = new JComboBox<>(
-                    WebServiceCommunication.HTTP_METHOD.values());
                 jpHttp1.add(jcbMethods);
                 jpHttp1.add(Box.createHorizontalStrut(18));
                 jpHttp1.add(new JLabel("endpoint: "));
@@ -229,14 +263,15 @@ public abstract class WebService extends EntityDriver {
                             LOG.debug("\n\n");
                             String ep = jtfEndpoint.getText();
                             String pm = jtfParameters.getText();
-                            String ct = jtaContent.getText();
+                            String ct = jtaRequest.getText();
                             String requestId = UUID.randomUUID().toString();
+                            HTTP_METHOD method = (HTTP_METHOD) jcbMethods.getSelectedItem();
                             String res;
                             JSONObject json;
 
                             jtaResponse.setText("");
                             try {
-                                switch ((WebServiceCommunication.HTTP_METHOD) jcbMethods.getSelectedItem()) {
+                                switch (method) {
                                     case GET:
                                         res = wsc.get(ep, pm, requestId);
                                         jtaResponse.setText(res);
@@ -284,6 +319,20 @@ public abstract class WebService extends EntityDriver {
                             long time = wsc.getResponseTime(requestId);
                             jtaResponse.append("\n\nresponse time (ms) " + time);
                             LOG.debug("\n\n");
+
+                            JSONObject j = new JSONObject()
+                                .put("method", method.name())
+                                .put("endpoint", ep)
+                                .put("parameters", pm)
+                                .put("req-body", ct)
+                                .put("res-body", jtaResponse.getText());
+                            historyModel.insertElementAt(j, 0);
+                            try {
+                                FileUtils.writeStringToFile(new File(historyDir, "ws-" + System.currentTimeMillis()
+                                    + ".json"), j.toString(2));
+                            } catch (IOException ex) {
+                                LOG.warn("Cannot save history {}", ex.getMessage());
+                            }
                         }
                     };
                     t.start();
@@ -296,8 +345,8 @@ public abstract class WebService extends EntityDriver {
                 }
                 );
 
-                jtaContent.setTabSize(4);
-                JScrollPane jsp = new JScrollPane(jtaContent);
+                jtaRequest.setTabSize(4);
+                JScrollPane jsp = new JScrollPane(jtaRequest);
                 jpRequest.add(jsp, BorderLayout.CENTER);
             }
 
@@ -366,13 +415,13 @@ public abstract class WebService extends EntityDriver {
             });
 
             JSplitPane jSplitPaneReqRes = new JSplitPane(JSplitPane.VERTICAL_SPLIT, jpRequest, jpResponse);
-            jSplitPaneReqRes.setResizeWeight(0.5);
+            jSplitPaneReqRes.setResizeWeight(0.28);
             jSplitPaneReqRes.setBorder(BorderFactory.createEtchedBorder());
 
             JPanel jpHistory = new JPanel(new BorderLayout());
             {
                 jpHistory.setBorder(BorderFactory.createEtchedBorder());
-                jpHistory.add(jlHistory, BorderLayout.CENTER);
+                jpHistory.add(new JScrollPane(jlHistory), BorderLayout.CENTER);
 
 //                JPanel jpButtons = new JPanel();
 //                jpButtons.setLayout(new BoxLayout(jpButtons, BoxLayout.LINE_AXIS));
@@ -385,13 +434,14 @@ public abstract class WebService extends EntityDriver {
             }
 
             JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jpHistory, jSplitPaneReqRes);
-            jSplitPane.setResizeWeight(0.2);
+            jSplitPane.setResizeWeight(0.18);
             jSplitPane.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
 
             jpContent.add(jSplitPane, BorderLayout.CENTER);
             jd.pack();
-            jd.setVisible(true);
             jd.setLocationRelativeTo(null);
+            jd.setVisible(true);
+            jSplitPane.setDividerLocation(0.12);
         });
 
         while (visible.get()) {
@@ -409,19 +459,22 @@ public abstract class WebService extends EntityDriver {
         }
     }
 
-    private ListModel<JSONObject> loadHistoryModel() {
-        File history = Paths.get(FileUtils.getUserDirectory().getAbsolutePath(), ".th", "ws-viewer").toFile();
-        history.mkdirs();
-        File[] files = history.listFiles();
+    private DefaultListModel<JSONObject> loadHistoryModel() {
+        historyDir.mkdirs();
+        File[] files = historyDir.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
 
+        int number = Math.min(200, files.length);
         DefaultListModel<JSONObject> m = new DefaultListModel<>();
-        for (File f : files) {
+        for (int i = 0; i < number; i++) {
             try {
-                m.addElement(new JSONObject(FileUtils.readFileToString(f)));
+                m.addElement(new JSONObject(FileUtils.readFileToString(files[i])));
             } catch (IOException ex) {
-                LOG.warn("cannot load json", ex);
+                LOG.warn("cannot load json {}", ex.getMessage());
             }
+        }
+        for (int i = number; i < files.length; i++) {
+            files[i].delete();
         }
         return m;
     }

@@ -6,7 +6,7 @@
 
     <groupId>com.tascape.qa</groupId>
     <artifactId>thx-webservice</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <packaging>jar</packaging>
 
     <dependencies>

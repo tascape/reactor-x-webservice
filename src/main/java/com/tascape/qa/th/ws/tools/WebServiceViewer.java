@@ -81,9 +81,9 @@ public class WebServiceViewer extends WebService {
 
     private final JPasswordField jtfClientCertPass = new JPasswordField();
 
-    private int debugMinutes = 30;
+    private int debugMinutes = 360;
 
-    private final JSpinner jsDebugMinutes = new JSpinner(new SpinnerNumberModel(30, 15, 180, 15));
+    private final JSpinner jsDebugMinutes = new JSpinner(new SpinnerNumberModel(debugMinutes, 15, 360, 15));
 
     private JDialog jd;
 
@@ -237,6 +237,7 @@ public class WebServiceViewer extends WebService {
             jd.setResizable(false);
             jd.setAlwaysOnTop(true);
             jd.setLocationRelativeTo(null);
+            jd.setAlwaysOnTop(true);
             jd.setVisible(true);
         });
     }
