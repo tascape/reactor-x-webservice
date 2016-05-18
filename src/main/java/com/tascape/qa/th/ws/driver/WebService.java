@@ -15,9 +15,6 @@
  */
 package com.tascape.qa.th.ws.driver;
 
-import com.alee.laf.WebLookAndFeel;
-import com.alee.laf.progressbar.WebProgressBar;
-import com.alee.utils.swing.ComponentUpdater;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.driver.EntityDriver;
 import com.tascape.qa.th.ui.UiUtils;
@@ -36,6 +33,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.BorderFactory;
@@ -58,6 +56,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
@@ -104,7 +103,6 @@ public abstract class WebService extends EntityDriver {
         AtomicBoolean pass = new AtomicBoolean(false);
         String tName = Thread.currentThread().getName() + "m";
         SwingUtilities.invokeLater(() -> {
-            WebLookAndFeel.install();
             JDialog jd = new JDialog((JFrame) null, "Manual Web Service Interaction");
             jd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             jd.setIconImages(UiUtils.getAvailableIconImages());
@@ -177,7 +175,6 @@ public abstract class WebService extends EntityDriver {
                 JButton jb = new JButton("FAIL");
                 jb.setForeground(Color.red);
                 jb.setFont(jb.getFont().deriveFont(Font.BOLD));
-                jpInfo.add(jb);
                 jpInfo.add(jb, BorderLayout.LINE_END);
                 jb.addActionListener(event -> {
                     pass.set(false);
@@ -185,11 +182,28 @@ public abstract class WebService extends EntityDriver {
                     visible.set(false);
                 });
             }
+            JLabel jlTimeout = new JLabel("1200 seconds left", SwingConstants.CENTER);
+            jpInfo.add(jlTimeout, BorderLayout.CENTER);
+            new SwingWorker<Long, Long>() {
+                @Override
+                protected Long doInBackground() throws Exception {
+                    while (System.currentTimeMillis() < end) {
+                        Thread.sleep(1000);
+                        long left = (end - System.currentTimeMillis()) / 1000;
+                        this.publish(left);
+                    }
+                    return 0L;
+                }
 
-            jpInfo.add(new JLabel(info, SwingConstants.CENTER), BorderLayout.CENTER);
-
-            JPanel jpProgress = new JPanel(new BorderLayout());
-            jpInfo.add(jpProgress, BorderLayout.PAGE_END);
+                @Override
+                protected void process(List<Long> chunks) {
+                    Long l = chunks.get(chunks.size() - 1);
+                    jlTimeout.setText(l + " seconds left");
+                    if (l < 850) {
+                        jlTimeout.setForeground(Color.red);
+                    }
+                }
+            }.execute();
 
             JPanel jpRequest = new JPanel(new BorderLayout());
             {
@@ -203,8 +217,10 @@ public abstract class WebService extends EntityDriver {
 
                 jpHttp1.add(jcbMethods);
                 jpHttp1.add(Box.createHorizontalStrut(18));
-                jpHttp1.add(new JLabel("endpoint: "));
+                jpHttp1.add(new JLabel(info, SwingConstants.CENTER), BorderLayout.CENTER);
                 jpHttp1.add(Box.createHorizontalStrut(8));
+                jpHttp1.add(new JLabel("endpoint: "));
+                jpHttp1.add(Box.createHorizontalStrut(5));
                 jpHttp1.add(jtfEndpoint);
                 jpHttp1.add(Box.createHorizontalStrut(8));
                 JButton jbHeaders = new JButton("Headers");
@@ -393,27 +409,6 @@ public abstract class WebService extends EntityDriver {
                     jtMsg.requestFocus();
                 });
             }
-
-            WebProgressBar jpb = new WebProgressBar(0, timeoutMinutes * 60);
-            jpb.setIndeterminate(true);
-            jpb.setIndeterminate(false);
-            jpb.setStringPainted(true);
-            jpb.setString("");
-            jpProgress.add(jpb);
-
-            ComponentUpdater.install(jpb, 1000, (ActionEvent e) -> {
-                int second = (int) (end - System.currentTimeMillis()) / 1000;
-                jpb.setValue(second);
-                jpb.setString(second + " seconds left");
-                if (second < 60) {
-                    jpb.setForeground(Color.red);
-                } else if (second < 300) {
-                    jpb.setForeground(Color.blue);
-                } else {
-                    jpb.setForeground(Color.green.darker());
-                }
-            });
-
             JSplitPane jSplitPaneReqRes = new JSplitPane(JSplitPane.VERTICAL_SPLIT, jpRequest, jpResponse);
             jSplitPaneReqRes.setResizeWeight(0.28);
             jSplitPaneReqRes.setBorder(BorderFactory.createEtchedBorder());
@@ -422,15 +417,6 @@ public abstract class WebService extends EntityDriver {
             {
                 jpHistory.setBorder(BorderFactory.createEtchedBorder());
                 jpHistory.add(new JScrollPane(jlHistory), BorderLayout.CENTER);
-
-//                JPanel jpButtons = new JPanel();
-//                jpButtons.setLayout(new BoxLayout(jpButtons, BoxLayout.LINE_AXIS));
-//                jpHistory.add(jpButtons, BorderLayout.PAGE_END);
-//                JButton jbLoad = new JButton("Load History");
-//                jpButtons.add(jbLoad);
-//                jpButtons.add(Box.createHorizontalGlue());
-//                JButton jbSave = new JButton("Save History");
-//                jpButtons.add(jbSave);
             }
 
             JSplitPane jSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, jpHistory, jSplitPaneReqRes);

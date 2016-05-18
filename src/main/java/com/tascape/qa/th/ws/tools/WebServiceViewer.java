@@ -15,7 +15,6 @@
  */
 package com.tascape.qa.th.ws.tools;
 
-import com.alee.laf.WebLookAndFeel;
 import com.tascape.qa.th.SystemConfiguration;
 import com.tascape.qa.th.ui.UiUtils;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
@@ -106,7 +105,6 @@ public class WebServiceViewer extends WebService {
 
     private void start() throws Exception {
         SwingUtilities.invokeLater(() -> {
-            WebLookAndFeel.install();
             jd = new JDialog((Frame) null, "Connect to Web Service");
             jd.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
             jd.setIconImages(UiUtils.getAvailableIconImages());
