@@ -444,6 +444,7 @@ public class WebServiceCommunication extends EntityCommunication {
         PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         cm.setMaxTotal(200);
         cm.setDefaultMaxPerRoute(20);
+        cm.setValidateAfterInactivity(5000);
         cm.setMaxPerRoute(new HttpRoute(httpHost), 200);
 
         this.client = httpClientBuilder.setConnectionManager(cm).build();
@@ -1241,7 +1242,7 @@ public class WebServiceCommunication extends EntityCommunication {
         }
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
-        HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);
+        HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);        
         return httpClientBuilder.setConnectionManager(cm).build();
     }
 
