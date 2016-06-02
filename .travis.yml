@@ -6,4 +6,3 @@ branches:
     - master 
 
 script: mvn clean install
-
