@@ -31,6 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import org.apache.commons.lang3.StringUtils;
@@ -163,6 +164,8 @@ public class WebServiceCommunication extends EntityCommunication {
     private final CookieStore cookieStore = new BasicCookieStore();
 
     private CloseableHttpClient client;
+
+    private IdleConnectionMonitorThread cmt;
 
     private final Map<String, String> headers = new HashMap<>();
 
@@ -447,6 +450,10 @@ public class WebServiceCommunication extends EntityCommunication {
         cm.setValidateAfterInactivity(5000);
         cm.setMaxPerRoute(new HttpRoute(httpHost), 200);
 
+        cmt = new IdleConnectionMonitorThread(cm);
+        cmt.setDaemon(true);
+        cmt.start();
+
         this.client = httpClientBuilder.setConnectionManager(cm).build();
     }
 
@@ -455,8 +462,14 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     @Override
     public void disconnect() throws Exception {
-        if (this.client != null) {
-            this.client.close();
+        try {
+            if (cmt != null) {
+                cmt.shutdown();
+            }
+        } finally {
+            if (this.client != null) {
+                this.client.close();
+            }
         }
     }
 
@@ -1242,8 +1255,41 @@ public class WebServiceCommunication extends EntityCommunication {
         }
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry = registryBuilder.build();
-        HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);        
+        HttpClientConnectionManager cm = new BasicHttpClientConnectionManager(socketFactoryRegistry);
         return httpClientBuilder.setConnectionManager(cm).build();
+    }
+
+    private static class IdleConnectionMonitorThread extends Thread {
+        private final HttpClientConnectionManager connMgr;
+
+        private volatile boolean shutdown;
+
+        public IdleConnectionMonitorThread(HttpClientConnectionManager connMgr) {
+            super();
+            this.connMgr = connMgr;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    synchronized (this) {
+                        wait(5000);
+                        connMgr.closeExpiredConnections();
+                        connMgr.closeIdleConnections(10, TimeUnit.SECONDS);
+                    }
+                }
+            } catch (InterruptedException ex) {
+                LOG.warn("interrupted", ex);
+            }
+        }
+
+        public void shutdown() {
+            shutdown = true;
+            synchronized (this) {
+                notifyAll();
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
