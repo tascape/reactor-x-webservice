@@ -17,7 +17,6 @@ package com.tascape.qa.th.ws.driver;
 
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.driver.EntityDriver;
-import com.tascape.qa.th.ui.UiUtils;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication.HTTP_METHOD;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -31,6 +30,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -57,6 +57,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
@@ -95,7 +96,7 @@ public abstract class WebService extends EntityDriver {
      * @throws Exception if case of error
      */
     public void interactManually(int timeoutMinutes) throws Exception {
-        LOG.info("Start UI to test manually");
+        LOG.info("Start UI to interact manually");
         String info = wsc.getHttpHost().toString();
         long end = System.currentTimeMillis() + timeoutMinutes * 60000L;
 
@@ -105,7 +106,6 @@ public abstract class WebService extends EntityDriver {
         SwingUtilities.invokeLater(() -> {
             JDialog jd = new JDialog((JFrame) null, "Manual Web Service Interaction");
             jd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            jd.setIconImages(UiUtils.getAvailableIconImages());
 
             JPanel jpContent = new JPanel(new BorderLayout());
             jd.setContentPane(jpContent);
@@ -237,7 +237,7 @@ public abstract class WebService extends EntityDriver {
                             wsc.getHeaders().entrySet().forEach(es -> {
                                 tm.insertRow(0, new String[]{es.getKey(), es.getValue()});
                             });
-                            tm.addRow(new String[]{"aa", "bb"});
+                            tm.addRow(new String[]{"", ""});
 
                             JTable jt = new JTable(tm);
                             jpHeaders.add(new JScrollPane(jt), BorderLayout.CENTER);
@@ -248,6 +248,8 @@ public abstract class WebService extends EntityDriver {
                             JButton apply = new JButton("Apply");
                             jp.add(Box.createHorizontalGlue());
                             jp.add(apply);
+                            apply.setEnabled(false);
+                            apply.setToolTipText("disabled for now, coming soon...");
 
                             JDialog jd0 = new JDialog(jd, "HTTP Headers");
                             jd0.setContentPane(jpHeaders);
@@ -278,6 +280,10 @@ public abstract class WebService extends EntityDriver {
                         public void run() {
                             LOG.debug("\n\n");
                             String ep = jtfEndpoint.getText();
+                            if (StringUtils.isBlank(ep)) {
+                                return;
+                            }
+
                             String pm = jtfParameters.getText();
                             String ct = jtaRequest.getText();
                             String requestId = UUID.randomUUID().toString();
@@ -330,7 +336,8 @@ public abstract class WebService extends EntityDriver {
                                 LOG.error(error, ex);
                                 StringWriter sw = new StringWriter();
                                 ex.printStackTrace(new PrintWriter(sw));
-                                jtaResponse.setText(sw.toString());
+                                jtaResponse.append(sw.toString());
+                                jtaResponse.append("\n");
                             }
                             long time = wsc.getResponseTime(requestId);
                             jtaResponse.append("\n\nresponse time (ms) " + time);
@@ -345,7 +352,7 @@ public abstract class WebService extends EntityDriver {
                             historyModel.insertElementAt(j, 0);
                             try {
                                 FileUtils.writeStringToFile(new File(historyDir, "ws-" + System.currentTimeMillis()
-                                    + ".json"), j.toString(2));
+                                    + ".json"), j.toString(2), Charset.defaultCharset());
                             } catch (IOException ex) {
                                 LOG.warn("Cannot save history {}", ex.getMessage());
                             }
@@ -358,28 +365,33 @@ public abstract class WebService extends EntityDriver {
                     } catch (InterruptedException ex) {
                         LOG.error(error, ex);
                     }
-                }
-                );
+                });
 
                 jtaRequest.setTabSize(4);
                 JScrollPane jsp = new JScrollPane(jtaRequest);
+                jsp.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(5, 10, 5, 5),
+                    UIManager.getBorder("TextField.border")));
+                jpRequest.add(new JLabel("<html>request<br>body: "), BorderLayout.LINE_START);
                 jpRequest.add(jsp, BorderLayout.CENTER);
             }
 
             JPanel jpResponse = new JPanel(new BorderLayout());
             {
                 JScrollPane jsp = new JScrollPane(jtaResponse);
+                jsp.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(5, 10, 5, 5),
+                    UIManager.getBorder("TextField.border")));
                 jpResponse.add(jsp, BorderLayout.CENTER);
+                jpResponse.add(new JLabel("response: "), BorderLayout.LINE_START);
             }
 
             JPanel jpLog = new JPanel();
             jpLog.setLayout(new BoxLayout(jpLog, BoxLayout.LINE_AXIS));
-            jpResponse.add(jpLog, BorderLayout.PAGE_START);
+            jpResponse.add(jpLog, BorderLayout.PAGE_END);
             {
-                JButton jbLogMsg = new JButton("Log Message");
-                jpLog.add(jbLogMsg);
                 JTextField jtMsg = new JTextField(10);
                 jpLog.add(jtMsg);
+                JButton jbLogMsg = new JButton("Log Message");
+                jpLog.add(jbLogMsg);
                 jtMsg.addFocusListener(new FocusListener() {
                     @Override
                     public void focusLost(final FocusEvent pE) {
@@ -404,7 +416,7 @@ public abstract class WebService extends EntityDriver {
                     try {
                         t.join();
                     } catch (InterruptedException ex) {
-                        LOG.error("Cannot take screenshot", ex);
+                        LOG.error("", ex);
                     }
                     jtMsg.requestFocus();
                 });
@@ -454,7 +466,7 @@ public abstract class WebService extends EntityDriver {
         DefaultListModel<JSONObject> m = new DefaultListModel<>();
         for (int i = 0; i < number; i++) {
             try {
-                m.addElement(new JSONObject(FileUtils.readFileToString(files[i])));
+                m.addElement(new JSONObject(FileUtils.readFileToString(files[i], Charset.defaultCharset())));
             } catch (IOException ex) {
                 LOG.warn("cannot load json {}", ex.getMessage());
             }

@@ -16,15 +16,13 @@
 package com.tascape.qa.th.ws.tools;
 
 import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.ui.UiUtils;
+import com.tascape.qa.th.ui.ViewerParameterDialog;
 import com.tascape.qa.th.ws.comm.WebServiceCommunication;
 import com.tascape.qa.th.ws.driver.WebService;
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Frame;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +32,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -84,7 +81,7 @@ public class WebServiceViewer extends WebService {
 
     private final JSpinner jsDebugMinutes = new JSpinner(new SpinnerNumberModel(debugMinutes, 15, 360, 15));
 
-    private JDialog jd;
+    private ViewerParameterDialog jd;
 
     private final JPanel jpParameters = new JPanel();
 
@@ -105,16 +102,10 @@ public class WebServiceViewer extends WebService {
 
     private void start() throws Exception {
         SwingUtilities.invokeLater(() -> {
-            jd = new JDialog((Frame) null, "Connect to Web Service");
-            jd.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            jd.setIconImages(UiUtils.getAvailableIconImages());
-
-            JPanel jpContent = new JPanel(new BorderLayout());
-            jd.setContentPane(jpContent);
-            jpContent.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            jd = new ViewerParameterDialog("Connect to Web Service");
 
             jpParameters.setLayout(new BoxLayout(jpParameters, BoxLayout.PAGE_AXIS));
-            jpContent.add(jpParameters, BorderLayout.CENTER);
+            jd.setParameterPanel(jpParameters);
 
             jtfHost.setText(host);
             jtfHost.setToolTipText("-D" + WebServiceCommunication.SYSPROP_HOST);
@@ -138,14 +129,14 @@ public class WebServiceViewer extends WebService {
             addParameter("Interaction time (minute)", jsDebugMinutes);
             addParameter("", Box.createRigidArea(new Dimension(588, 2)));
 
-            JPanel jpInfo = new JPanel();
-            jpContent.add(jpInfo, BorderLayout.PAGE_END);
-            jpInfo.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
-            jpInfo.setLayout(new BoxLayout(jpInfo, BoxLayout.LINE_AXIS));
+            JPanel jpAction = new JPanel();
+            jd.setActionPanel(jpAction);
+            jpAction.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+            jpAction.setLayout(new BoxLayout(jpAction, BoxLayout.LINE_AXIS));
 
             JButton jbLoad = new JButton("Load");
             jbLoad.setToolTipText("load properties from a file");
-            jpInfo.add(jbLoad);
+            jpAction.add(jbLoad);
             jbLoad.addActionListener(event -> {
                 JFileChooser chooser = new JFileChooser();
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("Java Properties file", "properties");
@@ -187,11 +178,11 @@ public class WebServiceViewer extends WebService {
                     }
                 }
             });
-            jpInfo.add(Box.createHorizontalStrut(5));
+            jpAction.add(Box.createHorizontalStrut(5));
 
             JButton jbSave = new JButton("Save");
             jbSave.setToolTipText("save current properties into a file");
-            jpInfo.add(jbSave);
+            jpAction.add(jbSave);
             jbSave.addActionListener(event -> {
                 JFileChooser chooser = new JFileChooser();
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("Java Properties file", "properties");
@@ -217,11 +208,11 @@ public class WebServiceViewer extends WebService {
                     }
                 }
             });
-            jpInfo.add(Box.createHorizontalGlue());
+            jpAction.add(Box.createHorizontalGlue());
 
             JButton jbConnect = new JButton("Connect");
             jbConnect.setFont(jbConnect.getFont().deriveFont(Font.BOLD));
-            jpInfo.add(jbConnect);
+            jpAction.add(jbConnect);
             jbConnect.addActionListener(event -> {
                 new Thread() {
                     @Override
@@ -231,12 +222,7 @@ public class WebServiceViewer extends WebService {
                 }.start();
             });
 
-            jd.pack();
-            jd.setResizable(false);
-            jd.setAlwaysOnTop(true);
-            jd.setLocationRelativeTo(null);
-            jd.setAlwaysOnTop(true);
-            jd.setVisible(true);
+            jd.showDialog();
         });
     }
 
