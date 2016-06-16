@@ -63,6 +63,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
+import org.apache.http.config.SocketConfig;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.routing.HttpRoute;
@@ -131,6 +132,8 @@ public class WebServiceCommunication extends EntityCommunication {
      * Web service user password for basic authentication
      */
     public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
+
+    public static final String SYSPROP_SO_TIMEOUT = "qa.th.comm.ws.SO_TIMEOUT";
 
     /**
      * Web service user agent string
@@ -449,6 +452,8 @@ public class WebServiceCommunication extends EntityCommunication {
         cm.setDefaultMaxPerRoute(20);
         cm.setValidateAfterInactivity(5000);
         cm.setMaxPerRoute(new HttpRoute(httpHost), 200);
+        cm.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(sysConfig.getIntProperty(SYSPROP_SO_TIMEOUT, 0))
+            .build());
 
         cmt = new IdleConnectionMonitorThread(cm);
         cmt.setDaemon(true);
@@ -1293,15 +1298,14 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     public static void main(String[] args) throws Exception {
-        WebServiceCommunication ws = new WebServiceCommunication("ec2-54-226-209-194.compute-1.amazonaws.com", 9000);
+        WebServiceCommunication ws = new WebServiceCommunication("127.0.0.0", 18088);
         ws.connect();
         Header[] headers = ws.head("thr/dashboard.xhtml");
         Stream.of(headers).forEach(h -> {
             LOG.debug("{} = {}", h.getName(), h.getValue());
         });
 
-        headers = WebServiceCommunication
-            .headUri("https://ec2-54-226-209-194.compute-1.amazonaws.com:9443/thr/dashboard.xhtml");
+        headers = WebServiceCommunication.headUri("https://127.0.0.1:18088/thr/dashboard.xhtml");
         Stream.of(headers).forEach(h -> {
             LOG.debug("{} = {}", h.getName(), h.getValue());
         });
