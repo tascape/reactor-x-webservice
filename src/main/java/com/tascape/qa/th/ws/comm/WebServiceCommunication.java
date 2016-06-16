@@ -133,6 +133,9 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
 
+    /**
+     * Socket timeout in millisecond, default to 0
+     */
     public static final String SYSPROP_SO_TIMEOUT = "qa.th.comm.ws.SO_TIMEOUT";
 
     /**
