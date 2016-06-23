@@ -71,6 +71,7 @@ import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
@@ -146,7 +147,7 @@ public class WebServiceCommunication extends EntityCommunication {
         + "Chrome/18.0.1025.151 Safari/535.19";
 
     public enum HTTP_METHOD {
-        GET, GET_JSONObject, GET_JSONArray, POST, POST_JSONObject, PUT, PUT_JSONObject, DELETE, HEAD,
+        GET, GET_JSONObject, GET_JSONArray, POST, POST_JSONObject, PUT, PUT_JSONObject, DELETE, DELETE_JSONObject, HEAD,
     }
 
     private static String cookieSpec = CookieSpecs.DEFAULT;
@@ -762,6 +763,78 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
+     * Issues HTTP DELETE request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param body      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String delete(String endpoint, String params, String body, String requestId) throws IOException {
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        LOG.debug("{} DELETE {}", this.hashCode(), url);
+        HttpPost delete = new HttpPost(url) {
+            @Override
+            public String getMethod() {
+                return HttpDelete.METHOD_NAME;
+            }
+        };
+
+        StringEntity entity = new StringEntity(body);
+        entity.setContentType(ContentType.TEXT_PLAIN.getMimeType());
+        delete.setEntity(entity);
+
+        this.addHeaders(delete);
+        HttpClientContext context = this.getHttpClientContext();
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(delete, context);
+        if (!StringUtils.isBlank(requestId)) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return check(response);
+    }
+
+    /**
+     * Issues HTTP DELETE request, returns response body as string.
+     *
+     * @param endpoint  endpoint of request url
+     * @param params    request line parameters
+     * @param json      request body
+     * @param requestId request id for record response time in millisecond
+     *
+     * @return response body
+     *
+     * @throws IOException in case of any IO related issue
+     */
+    public String deleteJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
+        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        LOG.debug("{} DELETE {}", this.hashCode(), url);
+        HttpPost delete = new HttpPost(url) {
+            @Override
+            public String getMethod() {
+                return HttpDelete.METHOD_NAME;
+            }
+        };
+
+        StringEntity entity = new StringEntity(json.toString());
+        entity.setContentType(ContentType.APPLICATION_JSON.getMimeType());
+        delete.setEntity(entity);
+
+        this.addHeaders(delete);
+        HttpClientContext context = this.getHttpClientContext();
+        long start = System.currentTimeMillis();
+        CloseableHttpResponse response = this.client.execute(delete, context);
+        if (!StringUtils.isBlank(requestId)) {
+            this.responseTime.put(requestId, System.currentTimeMillis() - start);
+        }
+        return check(response);
+    }
+
+    /**
      * Issues HTTP POST request, returns response body as string.
      *
      * @param endpoint endpoint of request url
@@ -808,7 +881,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(json.toString());
-        entity.setContentType("application/json");
+        entity.setContentType(ContentType.APPLICATION_JSON.getMimeType());
         post.setEntity(entity);
 
         this.addHeaders(post);
@@ -883,7 +956,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpPost post = new HttpPost(url);
 
         StringEntity entity = new StringEntity(body);
-        entity.setContentType("text/plain");
+        entity.setContentType(ContentType.TEXT_PLAIN.getMimeType());
         post.setEntity(entity);
 
         this.addHeaders(post);
@@ -1004,7 +1077,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(json.toString());
-        entity.setContentType("application/json");
+        entity.setContentType(ContentType.APPLICATION_JSON.getMimeType());
         put.setEntity(entity);
 
         this.addHeaders(put);
@@ -1064,7 +1137,7 @@ public class WebServiceCommunication extends EntityCommunication {
         HttpPut put = new HttpPut(url);
 
         StringEntity entity = new StringEntity(body);
-        entity.setContentType("text/plain");
+        entity.setContentType(ContentType.TEXT_PLAIN.getMimeType());
         put.setEntity(entity);
 
         this.addHeaders(put);

@@ -23,6 +23,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -104,7 +105,7 @@ public abstract class WebService extends EntityDriver {
         AtomicBoolean pass = new AtomicBoolean(false);
         String tName = Thread.currentThread().getName() + "m";
         SwingUtilities.invokeLater(() -> {
-            JDialog jd = new JDialog((JFrame) null, "Manual Web Service Interaction");
+            JDialog jd = new JDialog((Frame) null, "Manual Web Service Interaction");
             jd.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
             JPanel jpContent = new JPanel(new BorderLayout());
@@ -323,7 +324,15 @@ public abstract class WebService extends EntityDriver {
                                         jtaResponse.setText(res);
                                         break;
                                     case DELETE:
-                                        res = wsc.delete(ep, pm, requestId);
+                                        if (StringUtils.isBlank(ct)) {
+                                            res = wsc.delete(ep, pm, requestId);
+                                        } else {
+                                            res = wsc.delete(ep, pm, ct, requestId);
+                                        }
+                                        jtaResponse.setText(res);
+                                        break;
+                                    case DELETE_JSONObject:
+                                        res = wsc.deleteJson(ep, pm, new JSONObject(ct), requestId);
                                         jtaResponse.setText(res);
                                         break;
                                     case HEAD:
