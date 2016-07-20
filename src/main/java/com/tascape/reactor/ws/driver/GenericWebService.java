@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.driver;
+package com.tascape.reactor.ws.driver;
 
-import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.ws.comm.WebServiceCommunication;
-import com.tascape.qa.th.driver.EntityDriver;
+import com.tascape.reactor.ws.comm.WebServiceCommunication;
+import com.tascape.reactor.SystemConfiguration;
+import com.tascape.reactor.driver.EntityDriver;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.InetSocketAddress;

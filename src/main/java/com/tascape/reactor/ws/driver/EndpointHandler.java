@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.driver;
+package com.tascape.reactor.ws.driver;
 
-import com.tascape.qa.th.driver.EntityDriver;
+import com.tascape.reactor.driver.EntityDriver;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;

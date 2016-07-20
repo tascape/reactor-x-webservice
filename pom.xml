@@ -4,16 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.tascape.qa</groupId>
-    <artifactId>thx-webservice</artifactId>
-    <version>1.1.7</version>
+    <groupId>com.tascape</groupId>
+    <artifactId>reactor-x-webservice</artifactId>
+    <version>1.2.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>com.tascape.qa</groupId>
-            <artifactId>testharness</artifactId>
-            <version>1.1.9</version>
+            <groupId>com.tascape</groupId>
+            <artifactId>reactor</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tascape</groupId>
+            <artifactId>reactor-ui</artifactId>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -52,8 +57,8 @@
         <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
     </properties>
 
-    <name>thx-webservice</name>
-    <description>Testharness extension for web service related testing.</description>
+    <name>reactor-x-webservice</name>
+    <description>Reactor Wxtension for Web Service Automation</description>
     <url>https://github.com/tascape/testharness-x-webservice</url>
     <licenses>
         <license>
@@ -70,9 +75,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git@github.com:tascape/thx-webservice.git</connection>
-        <developerConnection>scm:git:git@github.com:tascape/thx-webservice.git</developerConnection>
-        <url>git:git@github.com:tascape/thx-webservice.git</url>
+        <connection>scm:git:git@github.com:tascape/reactor-x-webservice.git</connection>
+        <developerConnection>scm:git:git@github.com:tascape/reactor-x-webservice.git</developerConnection>
+        <url>git:git@github.com:tascape/reactor-x-webservice.git</url>
     </scm>
 
     <build>

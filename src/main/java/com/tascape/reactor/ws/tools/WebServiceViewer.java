@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.tools;
+package com.tascape.reactor.ws.tools;
 
-import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.ui.ViewerParameterDialog;
-import com.tascape.qa.th.ws.comm.WebServiceCommunication;
-import com.tascape.qa.th.ws.driver.WebService;
+import com.tascape.reactor.SystemConfiguration;
+import com.tascape.reactor.ui.ViewerParameterDialog;
+import com.tascape.reactor.ws.comm.WebServiceCommunication;
+import com.tascape.reactor.ws.driver.WebService;
 import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;

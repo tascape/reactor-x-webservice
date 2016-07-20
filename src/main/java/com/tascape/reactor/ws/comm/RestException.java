@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.comm;
+package com.tascape.reactor.ws.comm;
 
 import java.io.IOException;
 
@@ -21,7 +21,7 @@ import java.io.IOException;
  *
  * @author linsong wang
  */
-public class WebServiceException extends IOException {
+public class RestException extends IOException {
     private static final long serialVersionUID = 1L;
 
     public static final HttpCodeMatcher HTTP_400 = new HttpCodeMatcher(400);
@@ -32,11 +32,19 @@ public class WebServiceException extends IOException {
 
     private final int httpCode;
 
-    public WebServiceException(int httpCode, String message) {
+    /**
+     * @param httpCode HTTP response code
+     * @param message  error message
+     */
+    public RestException(int httpCode, String message) {
         super(message);
         this.httpCode = httpCode;
     }
 
+    /**
+     *
+     * @return HTTP response code
+     */
     public int getHttpCode() {
         return httpCode;
     }

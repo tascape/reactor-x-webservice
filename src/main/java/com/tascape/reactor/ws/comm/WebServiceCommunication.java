@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.comm;
+package com.tascape.reactor.ws.comm;
 
-import com.tascape.qa.th.SystemConfiguration;
-import com.tascape.qa.th.comm.EntityCommunication;
+import com.tascape.reactor.SystemConfiguration;
+import com.tascape.reactor.comm.EntityCommunication;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;

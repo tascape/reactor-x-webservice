@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.test;
+package com.tascape.reactor.ws.test;
 
-import com.tascape.qa.th.ws.driver.WebService;
+import com.tascape.reactor.ws.driver.WebService;
 
 /**
  *

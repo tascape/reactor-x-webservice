@@ -13,39 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.comm;
+package com.tascape.reactor.ws.comm;
 
-import java.io.IOException;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author linsong wang
  */
-public class RestException extends IOException {
-    private static final long serialVersionUID = 1L;
-
-    public static final HttpCodeMatcher HTTP_400 = new HttpCodeMatcher(400);
-
-    public static final HttpCodeMatcher HTTP_403 = new HttpCodeMatcher(403);
-
-    public static final HttpCodeMatcher HTTP_404 = new HttpCodeMatcher(404);
+public class HttpCodeMatcher extends BaseMatcher<WebServiceException> {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpCodeMatcher.class);
 
     private final int httpCode;
 
     /**
      * @param httpCode HTTP response code
-     * @param message  error message
      */
-    public RestException(int httpCode, String message) {
-        super(message);
+    public HttpCodeMatcher(int httpCode) {
         this.httpCode = httpCode;
     }
 
-    /**
-     *
-     * @return HTTP response code
-     */
-    public int getHttpCode() {
-        return httpCode;
+    @Override
+    public boolean matches(Object item) {
+        LOG.info("Try to match HTTP code {}.", this.httpCode);
+        if (item instanceof WebServiceException) {
+            return ((WebServiceException) item).getHttpCode() == httpCode;
+        }
+        return false;
+    }
+
+    @Override
+    public void describeTo(Description description) {
     }
 }

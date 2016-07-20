@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.qa.th.ws.driver;
+package com.tascape.reactor.ws.driver;
 
-import com.tascape.qa.th.ws.comm.WebServiceCommunication;
-import com.tascape.qa.th.driver.EntityDriver;
-import com.tascape.qa.th.ws.comm.WebServiceCommunication.HTTP_METHOD;
+import com.tascape.reactor.ws.comm.WebServiceCommunication;
+import com.tascape.reactor.driver.EntityDriver;
+import com.tascape.reactor.ws.comm.WebServiceCommunication.HTTP_METHOD;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
