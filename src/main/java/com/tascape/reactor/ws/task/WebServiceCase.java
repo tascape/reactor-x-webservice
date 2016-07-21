@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.tascape.reactor.ws.test;
+package com.tascape.reactor.ws.task;
 
 import com.tascape.reactor.ws.driver.WebService;
 
@@ -21,7 +21,7 @@ import com.tascape.reactor.ws.driver.WebService;
  *
  * @author linsong wang
  */
-public interface WebServiceTest {
+public interface WebServiceCase {
 
     default void testManually(WebService ws) throws Exception {
         testManually(ws, 30);
