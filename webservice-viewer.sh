@@ -2,4 +2,4 @@
 
 mvn clean install
 
-java -cp target/*:target/dependency/* com.tascape.qa.th.ws.tools.WebServiceViewer
+java -cp target/*:target/dependency/* com.tascape.reactor.ws.tools.WebServiceViewer
