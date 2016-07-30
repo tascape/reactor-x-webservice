@@ -23,8 +23,8 @@ import com.tascape.reactor.ws.driver.WebService;
  */
 public interface WebServiceCase {
 
-    default void testManually(WebService ws) throws Exception {
-        testManually(ws, 30);
+    default void runManually(WebService ws) throws Exception {
+        runManually(ws, 30);
     }
 
     /**
@@ -36,7 +36,7 @@ public interface WebServiceCase {
      *
      * @throws Exception if case of error
      */
-    default void testManually(WebService ws, int timeoutMinutes) throws Exception {
+    default void runManually(WebService ws, int timeoutMinutes) throws Exception {
         ws.interactManually(timeoutMinutes);
     }
 }

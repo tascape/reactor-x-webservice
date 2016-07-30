@@ -143,7 +143,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * Web service user agent string
      */
     public static final String USER_AGENT
-        = "Mozilla/5.0 (TestHarness; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
+        = "Mozilla/5.0 (Reactor; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) "
         + "Chrome/18.0.1025.151 Safari/535.19";
 
     public enum HTTP_METHOD {
