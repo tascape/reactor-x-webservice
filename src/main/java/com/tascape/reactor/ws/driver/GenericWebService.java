@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 public final class GenericWebService extends EntityDriver {
     private static final Logger LOG = LoggerFactory.getLogger(GenericWebService.class);
 
-    public static final String SYSPROP_PORT = "qa.th.driver.ws.GWS_PORT";
+    public static final String SYSPROP_PORT = "reactor.driver.ws.GWS_PORT";
 
     public static final int XONSTANT_PORT = 10080;
 
@@ -69,7 +69,7 @@ public final class GenericWebService extends EntityDriver {
     private ListeningIOReactor ioReactor;
 
     /**
-     * Server port is read from system property qa.th.driver.ws.GWS_PORT. Default value is 10080.
+     * Server port is read from system property reactor.driver.ws.GWS_PORT. Default value is 10080.
      */
     public GenericWebService() {
         this(SystemConfiguration.getInstance().getIntProperty(SYSPROP_PORT, XONSTANT_PORT));

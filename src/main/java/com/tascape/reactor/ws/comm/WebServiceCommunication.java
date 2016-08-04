@@ -107,37 +107,37 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Web service host name or IP address
      */
-    public static final String SYSPROP_HOST = "qa.th.comm.ws.HOST";
+    public static final String SYSPROP_HOST = "reactor.comm.ws.HOST";
 
     /**
      * Web service port number
      */
-    public static final String SYSPROP_PORT = "qa.th.comm.ws.PORT";
+    public static final String SYSPROP_PORT = "reactor.comm.ws.PORT";
 
     /**
      * Certificate used to authenticate web service client
      */
-    public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.ws.CLIENT_CERT";
+    public static final String SYSPROP_CLIENT_CERT = "reactor.comm.ws.CLIENT_CERT";
 
     /**
      * Passcode of client certificate
      */
-    public static final String SYSPROP_CLIENT_CERT_PASS = "qa.th.comm.ws.CLIENT_CERT_PASS";
+    public static final String SYSPROP_CLIENT_CERT_PASS = "reactor.comm.ws.CLIENT_CERT_PASS";
 
     /**
      * Web service user name for basic authentication
      */
-    public static final String SYSPROP_USER = "qa.th.comm.ws.USER";
+    public static final String SYSPROP_USER = "reactor.comm.ws.USER";
 
     /**
      * Web service user password for basic authentication
      */
-    public static final String SYSPROP_PASS = "qa.th.comm.ws.PASS";
+    public static final String SYSPROP_PASS = "reactor.comm.ws.PASS";
 
     /**
      * Socket timeout in millisecond, default to 0
      */
-    public static final String SYSPROP_SO_TIMEOUT = "qa.th.comm.ws.SO_TIMEOUT";
+    public static final String SYSPROP_SO_TIMEOUT = "reactor.comm.ws.SO_TIMEOUT";
 
     /**
      * Web service user agent string
@@ -234,12 +234,12 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Needs system properties.
      * <ul>
-     * <li>qa.th.comm.ws.HOST, default to localhost if not set</li>
-     * <li>qa.th.comm.ws.PORT, default to 443 if not set</li>
-     * <li>qa.th.comm.ws.USER, no default</li>
-     * <li>qa.th.comm.ws.PASS, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT_PASS, no default</li>
+     * <li>reactor.comm.ws.HOST, default to localhost if not set</li>
+     * <li>reactor.comm.ws.PORT, default to 443 if not set</li>
+     * <li>reactor.comm.ws.USER, no default</li>
+     * <li>reactor.comm.ws.PASS, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT_PASS, no default</li>
      * </ul>
      *
      * @return an instance of communication
@@ -271,12 +271,12 @@ public class WebServiceCommunication extends EntityCommunication {
     /**
      * Needs system properties.
      * <ul>
-     * <li>qa.th.comm.ws.HOST.$name, fall back to qa.th.comm.ws.HOST, and then default to localhost if not set</li>
-     * <li>qa.th.comm.ws.PORT.$name, fall back to qa.th.comm.ws.PORT, then default to 443 if not set</li>
-     * <li>qa.th.comm.ws.USER.$name, fall back to qa.th.comm.ws.USER, no default</li>
-     * <li>qa.th.comm.ws.PASS.$name, fall back to qa.th.comm.ws.PASS, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT.$name, fall back to qa.th.comm.ws.CLIENT_CERT, no default</li>
-     * <li>qa.th.comm.ws.CLIENT_CERT_PASS.$name, fall back to qa.th.comm.ws.CLIENT_CERT_PASS, no default</li>
+     * <li>reactor.comm.ws.HOST.$name, fall back to reactor.comm.ws.HOST, and then default to localhost if not set</li>
+     * <li>reactor.comm.ws.PORT.$name, fall back to reactor.comm.ws.PORT, then default to 443 if not set</li>
+     * <li>reactor.comm.ws.USER.$name, fall back to reactor.comm.ws.USER, no default</li>
+     * <li>reactor.comm.ws.PASS.$name, fall back to reactor.comm.ws.PASS, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT.$name, fall back to reactor.comm.ws.CLIENT_CERT, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT_PASS.$name, fall back to reactor.comm.ws.CLIENT_CERT_PASS, no default</li>
      * </ul>
      *
      * @param name name of each require system property

@@ -35,32 +35,32 @@ public class RestCommunication extends EntityCommunication {
     /**
      * REST service host name or IP address
      */
-    public static final String SYSPROP_HOST = "qa.th.comm.rest.HOST";
+    public static final String SYSPROP_HOST = "reactor.comm.rest.HOST";
 
     /**
      * REST service port
      */
-    public static final String SYSPROP_PORT = "qa.th.comm.rest.PORT";
+    public static final String SYSPROP_PORT = "reactor.comm.rest.PORT";
 
     /**
      * Certificate used to authenticate REST service client
      */
-    public static final String SYSPROP_CLIENT_CERT = "qa.th.comm.rest.CLIENT_CERT";
+    public static final String SYSPROP_CLIENT_CERT = "reactor.comm.rest.CLIENT_CERT";
 
     /**
      * Passcode of client certificate
      */
-    public static final String SYSPROP_CLIENT_CERT_PASS = "qa.th.comm.rest.CLIENT_CERT_PASS";
+    public static final String SYSPROP_CLIENT_CERT_PASS = "reactor.comm.rest.CLIENT_CERT_PASS";
 
     /**
      * REST service user name for basic authentication
      */
-    public static final String SYSPROP_USER = "qa.th.comm.rest.USER";
+    public static final String SYSPROP_USER = "reactor.comm.rest.USER";
 
     /**
      * REST service user password for basic authentication
      */
-    public static final String SYSPROP_PASS = "qa.th.comm.rest.PASS";
+    public static final String SYSPROP_PASS = "reactor.comm.rest.PASS";
 
     private RequestSpecification reqSpec;
 
