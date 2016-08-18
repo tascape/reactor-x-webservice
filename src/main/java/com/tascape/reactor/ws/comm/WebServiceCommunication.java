@@ -324,10 +324,10 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public WebServiceCommunication(String host, int port) {
         if (port % 1000 == 443) {
-            this.baseUri = "https://" + host + ":" + port;
+            this.baseUri = "https://" + host + (port == 443 ? "" : ":" + port);
             this.httpHost = new HttpHost(host, port, "https");
         } else {
-            this.baseUri = "http://" + host + ":" + port;
+            this.baseUri = "http://" + host + (port == 80 ? "" : ":" + port);
             this.httpHost = new HttpHost(host, port, "http");
         }
     }
