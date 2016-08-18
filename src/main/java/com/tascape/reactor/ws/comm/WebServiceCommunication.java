@@ -247,39 +247,21 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws Exception if having problem connecting to the service
      */
     public static WebServiceCommunication newInstance() throws Exception {
-        SystemConfiguration sysConfig = SystemConfiguration.getInstance();
-        String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
-        int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
-        WebServiceCommunication wsc = new WebServiceCommunication(host, port);
-
-        String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
-        String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
-        if (null != user && null != pass) {
-            wsc.setBasicUsernamePassword(user, pass);
-        }
-
-        String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
-        String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
-        if (null != clientCert && null != clientCertPass) {
-            wsc.setClientCertificate(clientCert, clientCertPass);
-        }
-
-        wsc.connect();
-        return wsc;
+        return newInstance("");
     }
 
     /**
      * Needs system properties.
      * <ul>
-     * <li>reactor.comm.ws.HOST.$name, fall back to reactor.comm.ws.HOST, and then default to localhost if not set</li>
-     * <li>reactor.comm.ws.PORT.$name, fall back to reactor.comm.ws.PORT, then default to 443 if not set</li>
-     * <li>reactor.comm.ws.USER.$name, fall back to reactor.comm.ws.USER, no default</li>
-     * <li>reactor.comm.ws.PASS.$name, fall back to reactor.comm.ws.PASS, no default</li>
-     * <li>reactor.comm.ws.CLIENT_CERT.$name, fall back to reactor.comm.ws.CLIENT_CERT, no default</li>
-     * <li>reactor.comm.ws.CLIENT_CERT_PASS.$name, fall back to reactor.comm.ws.CLIENT_CERT_PASS, no default</li>
+     * <li>reactor.comm.ws.HOST$name, fall back to reactor.comm.ws.HOST, and then default to localhost if not set</li>
+     * <li>reactor.comm.ws.PORT$name, fall back to reactor.comm.ws.PORT, then default to 443 if not set</li>
+     * <li>reactor.comm.ws.USER$name, fall back to reactor.comm.ws.USER, no default</li>
+     * <li>reactor.comm.ws.PASS$name, fall back to reactor.comm.ws.PASS, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT$name, fall back to reactor.comm.ws.CLIENT_CERT, no default</li>
+     * <li>reactor.comm.ws.CLIENT_CERT_PASS$name, fall back to reactor.comm.ws.CLIENT_CERT_PASS, no default</li>
      * </ul>
      *
-     * @param name name of each require system property
+     * @param name name of each require system property, such as ".SERVER_ONE"
      *
      * @return an instance of communication
      *
@@ -287,21 +269,21 @@ public class WebServiceCommunication extends EntityCommunication {
      */
     public static WebServiceCommunication newInstance(String name) throws Exception {
         SystemConfiguration sysConfig = SystemConfiguration.getInstance();
-        String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST + "." + name);
+        String host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST + name);
         if (host == null) {
             host = sysConfig.getProperty(WebServiceCommunication.SYSPROP_HOST, "localhost");
         }
-        int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT + "." + name);
+        int port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT + name);
         if (port == Integer.MIN_VALUE) {
             port = sysConfig.getIntProperty(WebServiceCommunication.SYSPROP_PORT, 443);
         }
         WebServiceCommunication wsc = new WebServiceCommunication(host, port);
 
-        String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER + "." + name);
+        String user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER + name);
         if (user == null) {
             user = sysConfig.getProperty(WebServiceCommunication.SYSPROP_USER);
         }
-        String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS + "." + name);
+        String pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS + name);
         if (pass == null) {
             pass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_PASS);
         }
@@ -309,11 +291,11 @@ public class WebServiceCommunication extends EntityCommunication {
             wsc.setBasicUsernamePassword(user, pass);
         }
 
-        String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + "." + name);
+        String clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT + name);
         if (clientCert == null) {
             clientCert = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT);
         }
-        String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + "." + name);
+        String clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS + name);
         if (clientCertPass == null) {
             clientCertPass = sysConfig.getProperty(WebServiceCommunication.SYSPROP_CLIENT_CERT_PASS);
         }
@@ -521,7 +503,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public Header[] head(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("HEAD {}", url);
         HttpHead head = new HttpHead(url);
 
@@ -695,7 +677,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String get(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} GET {}", this.hashCode(), url);
         HttpGet get = new HttpGet(url);
 
@@ -748,7 +730,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String delete(String endpoint, String params, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} DELETE {}", this.hashCode(), url);
         HttpDelete delete = new HttpDelete(url);
 
@@ -775,7 +757,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String delete(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} DELETE {}", this.hashCode(), url);
         HttpPost delete = new HttpPost(url) {
             @Override
@@ -811,7 +793,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String deleteJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} DELETE {}", this.hashCode(), url);
         HttpPost delete = new HttpPost(url) {
             @Override
@@ -876,7 +858,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String postJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
@@ -951,7 +933,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String post(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
 
@@ -1015,7 +997,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String postEntity(String endpoint, String params, HttpEntity entity, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} POST {}", this.hashCode(), url);
         HttpPost post = new HttpPost(url);
         post.setEntity(entity);
@@ -1072,7 +1054,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String putJson(String endpoint, String params, JSONObject json, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 
@@ -1132,7 +1114,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public String put(String endpoint, String params, String body, String requestId) throws IOException {
-        String url = String.format("%s%s?%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : params);
+        String url = String.format("%s%s%s", this.baseUri, endpoint, StringUtils.isBlank(params) ? "" : "?" + params);
         LOG.debug("{} PUT {}", this.hashCode(), url);
         HttpPut put = new HttpPut(url);
 

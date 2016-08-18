@@ -15,6 +15,8 @@
  */
 package com.tascape.reactor.ws.driver;
 
+import com.tascape.reactor.SystemConfiguration;
+import com.tascape.reactor.comm.SshCommunication;
 import com.tascape.reactor.ws.comm.WebServiceCommunication;
 import com.tascape.reactor.driver.EntityDriver;
 import com.tascape.reactor.ws.comm.WebServiceCommunication.HTTP_METHOD;
@@ -32,7 +34,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -79,10 +80,28 @@ import org.slf4j.LoggerFactory;
 public abstract class WebService extends EntityDriver {
     private static final Logger LOG = LoggerFactory.getLogger(WebService.class);
 
+    private static final File HISTORY_DIR = SystemConfiguration.HOME_PATH.resolve("ws-viewer").toFile();
+
     protected WebServiceCommunication wsc;
 
-    private final File historyDir = Paths.get(FileUtils.getUserDirectory().getAbsolutePath(), ".th", "ws-viewer")
-        .toFile();
+    protected SshCommunication ssh;
+
+    public void setWebServiceCommunication(WebServiceCommunication wsc) {
+        this.setEntityCommunication(wsc);
+        this.wsc = wsc;
+    }
+
+    public WebServiceCommunication getWebServiceCommunication() {
+        return this.wsc;
+    }
+
+    public SshCommunication getSshCommunication() {
+        return ssh;
+    }
+
+    public void setSshCommunication(SshCommunication ssh) {
+        this.ssh = ssh;
+    }
 
     public void interactManually() throws Exception {
         WebService.this.interactManually(30);
@@ -360,7 +379,7 @@ public abstract class WebService extends EntityDriver {
                                 .put("res-body", jtaResponse.getText());
                             historyModel.insertElementAt(j, 0);
                             try {
-                                FileUtils.writeStringToFile(new File(historyDir, "ws-" + System.currentTimeMillis()
+                                FileUtils.writeStringToFile(new File(HISTORY_DIR, "ws-" + System.currentTimeMillis()
                                     + ".json"), j.toString(2), Charset.defaultCharset());
                             } catch (IOException ex) {
                                 LOG.warn("Cannot save history {}", ex.getMessage());
@@ -467,8 +486,8 @@ public abstract class WebService extends EntityDriver {
     }
 
     private DefaultListModel<JSONObject> loadHistoryModel() {
-        historyDir.mkdirs();
-        File[] files = historyDir.listFiles();
+        HISTORY_DIR.mkdirs();
+        File[] files = HISTORY_DIR.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
 
         int number = Math.min(200, files.length);
