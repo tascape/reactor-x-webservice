@@ -87,7 +87,6 @@ public abstract class WebService extends EntityDriver {
     protected SshCommunication ssh;
 
     public void setWebServiceCommunication(WebServiceCommunication wsc) {
-        this.setEntityCommunication(wsc);
         this.wsc = wsc;
     }
 
