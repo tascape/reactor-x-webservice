@@ -58,7 +58,7 @@
     </properties>
 
     <name>reactor-x-webservice</name>
-    <description>Reactor Wxtension for Web Service Automation</description>
+    <description>Reactor Extension for Web Service Automation</description>
     <url>https://github.com/tascape/reactor-x-webservice</url>
     <licenses>
         <license>
