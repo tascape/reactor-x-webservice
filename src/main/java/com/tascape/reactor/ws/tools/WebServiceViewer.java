@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.Properties;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -139,6 +140,7 @@ public class WebServiceViewer extends WebService {
             jpAction.add(jbLoad);
             jbLoad.addActionListener(event -> {
                 JFileChooser chooser = new JFileChooser();
+                chooser.setCurrentDirectory(Paths.get(".").toFile());
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("Java Properties file", "properties");
                 chooser.setFileFilter(filter);
                 chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
