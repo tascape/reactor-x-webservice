@@ -528,13 +528,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint) throws IOException {
-        String res = this.get(endpoint, null, null);
-        try {
-            return new JSONObject(res);
-        } catch (JSONException ex) {
-            LOG.warn(res);
-            throw ex;
-        }
+        return getJsonObject(endpoint, null, null);
     }
 
     /**
@@ -548,13 +542,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params) throws IOException {
-        String res = this.get(endpoint, params, null);
-        try {
-            return new JSONObject(res);
-        } catch (JSONException ex) {
-            LOG.warn(res);
-            throw ex;
-        }
+        return getJsonObject(endpoint, params, null);
     }
 
     /**
@@ -569,12 +557,20 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONObject getJsonObject(String endpoint, String params, String requestId) throws IOException {
+        String ct = this.headers.get("Content-Type");
+        this.headers.put("Content-Type", ContentType.APPLICATION_JSON.getMimeType());
         String res = this.get(endpoint, params, requestId);
         try {
             return new JSONObject(res);
         } catch (JSONException ex) {
             LOG.warn(res);
             throw ex;
+        } finally {
+            if (ct == null) {
+                this.headers.remove("Content-Type");
+            } else {
+                this.headers.put("Content-Type", ct);
+            }
         }
     }
 
@@ -588,13 +584,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint) throws IOException {
-        String res = this.get(endpoint, null, null);
-        try {
-            return new JSONArray(res);
-        } catch (JSONException ex) {
-            LOG.warn(res);
-            throw ex;
-        }
+        return getJsonArray(endpoint, null, null);
     }
 
     /**
@@ -608,13 +598,7 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params) throws IOException {
-        String res = this.get(endpoint, params, null);
-        try {
-            return new JSONArray(res);
-        } catch (JSONException ex) {
-            LOG.warn(res);
-            throw ex;
-        }
+        return getJsonArray(endpoint, params, null);
     }
 
     /**
@@ -629,12 +613,20 @@ public class WebServiceCommunication extends EntityCommunication {
      * @throws IOException in case of any IO related issue
      */
     public JSONArray getJsonArray(String endpoint, String params, String requestId) throws IOException {
+        String ct = this.headers.get("Content-Type");
+        this.headers.put("Content-Type", ContentType.APPLICATION_JSON.getMimeType());
         String res = this.get(endpoint, params, requestId);
         try {
             return new JSONArray(res);
         } catch (JSONException ex) {
             LOG.warn(res);
             throw ex;
+        } finally {
+            if (ct == null) {
+                this.headers.remove("Content-Type");
+            } else {
+                this.headers.put("Content-Type", ct);
+            }
         }
     }
 

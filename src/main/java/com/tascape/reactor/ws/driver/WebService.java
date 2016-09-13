@@ -267,8 +267,6 @@ public abstract class WebService extends EntityDriver {
                             JButton apply = new JButton("Apply");
                             jp.add(Box.createHorizontalGlue());
                             jp.add(apply);
-                            apply.setEnabled(false);
-                            apply.setToolTipText("disabled for now, coming soon...");
 
                             JDialog jd0 = new JDialog(jd, "HTTP Headers");
                             jd0.setContentPane(jpHeaders);
@@ -276,6 +274,15 @@ public abstract class WebService extends EntityDriver {
                             jd0.pack();
                             jd0.setLocationRelativeTo(jd);
                             jd0.setVisible(true);
+
+                            apply.addActionListener((ActionEvent e) -> {
+                                for (int i = 0, j = jt.getModel().getRowCount(); i < j; i++) {
+                                    wsc.getHeaders().put(jt.getValueAt(i, 0) + "", jt.getValueAt(i, 1) + "");
+                                }
+                                jd0.dispose();
+                            });
+
+
                         }
                     };
                     t.start();
