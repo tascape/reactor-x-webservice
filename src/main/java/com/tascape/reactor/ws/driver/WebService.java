@@ -107,6 +107,10 @@ public abstract class WebService extends EntityDriver {
         WebService.this.interactManually(30);
     }
 
+    public void logIntoFile(String prefix, JSONObject json) throws IOException {
+        this.saveIntoFile(prefix, "json", json.toString(2));
+    }
+
     /**
      * The method starts a GUI to let an user send requests to web service manually.
      * Please make sure to set timeout long enough for manual interaction.
@@ -282,8 +286,6 @@ public abstract class WebService extends EntityDriver {
                                 }
                                 jd0.dispose();
                             });
-
-
                         }
                     };
                     t.start();
@@ -385,6 +387,7 @@ public abstract class WebService extends EntityDriver {
                                 .put("req-body", ct)
                                 .put("res-body", jtaResponse.getText());
                             historyModel.insertElementAt(j, 0);
+                            jlHistory.setSelectedIndex(0);
                             try {
                                 FileUtils.writeStringToFile(new File(HISTORY_DIR, "ws-" + System.currentTimeMillis()
                                     + ".json"), j.toString(2), Charset.defaultCharset());
