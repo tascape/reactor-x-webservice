@@ -16,6 +16,7 @@
  */
 package com.tascape.reactor.ws.comm;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.slf4j.Logger;
@@ -30,18 +31,31 @@ public class HttpCodeMatcher extends BaseMatcher<WebServiceException> {
 
     private final int httpCode;
 
+    private final String message;
+
     /**
      * @param httpCode HTTP response code
      */
     public HttpCodeMatcher(int httpCode) {
+        this(httpCode, "");
+    }
+
+    /**
+     * @param httpCode expected HTTP response code
+     * @param message  expected message in response content
+     */
+    public HttpCodeMatcher(int httpCode, String message) {
         this.httpCode = httpCode;
+        this.message = message;
     }
 
     @Override
     public boolean matches(Object item) {
         LOG.info("Try to match HTTP code {}.", this.httpCode);
         if (item instanceof WebServiceException) {
-            return ((WebServiceException) item).getHttpCode() == httpCode;
+            WebServiceException ex = (WebServiceException) item;
+            return (httpCode == 0 || ex.getHttpCode() == httpCode)
+                && (StringUtils.isBlank(message) || ex.getMessage().contains(message));
         }
         return false;
     }
