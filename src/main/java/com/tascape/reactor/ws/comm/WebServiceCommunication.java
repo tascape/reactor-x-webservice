@@ -385,8 +385,8 @@ public class WebServiceCommunication extends EntityCommunication {
      *
      * @param name HTTP header name
      *
-     * @return the previous header value associated with <tt>name</tt>, or <tt>null</tt> if there was no mapping for
-     * <tt>name</tt>.
+     * @return the previous header value associated with <code>name</code>, or <code>null</code> if there was no
+     * mapping for <code>name</code>.
      */
     public String removeHeader(String name) {
         return this.headers.remove(name);
