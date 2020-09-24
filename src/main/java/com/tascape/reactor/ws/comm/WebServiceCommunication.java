@@ -334,6 +334,23 @@ public class WebServiceCommunication extends EntityCommunication {
     }
 
     /**
+     * Constructor.
+     *
+     * @param host host DNS name or IP
+     * @param port http port
+     * @param https enable https explicitly
+     */
+    public WebServiceCommunication(String host, int port, boolean https) {
+        if (https) {
+            this.baseUri = "https://" + host + (port == 443 ? "" : ":" + port);
+            this.httpHost = new HttpHost(host, port, "https");
+        } else {
+            this.baseUri = "http://" + host + (port == 80 ? "" : ":" + port);
+            this.httpHost = new HttpHost(host, port, "http");
+        }
+    }
+
+    /**
      * Calls this to provide client certificate.
      *
      * @param clientCertificate client certificate file
