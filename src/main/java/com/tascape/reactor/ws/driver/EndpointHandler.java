@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.http.HttpException;
@@ -46,6 +47,26 @@ import org.slf4j.LoggerFactory;
 public abstract class EndpointHandler extends EntityDriver implements HttpAsyncRequestHandler<HttpRequest> {
     private static final Logger LOG = LoggerFactory.getLogger(EndpointHandler.class);
 
+    /**
+     * Gets parameter value of request line.
+     *
+     * @param request HTTP request
+     * @param name    name of the request line parameter
+     *
+     * @return parameter value, only the first is returned if there are multiple values for the same name
+     *
+     * @throws URISyntaxException in case of URL issue
+     */
+    public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
+        NameValuePair nv = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), Charset.defaultCharset()).stream()
+            .filter(param -> param.getName().equals(name))
+            .findFirst().get();
+        if (nv == null) {
+            return null;
+        }
+        return nv.getValue();
+    }
+
     protected final Set<ResponseUpdater> responseUpdaterSet = new HashSet<>();
 
     /**
@@ -66,8 +87,7 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
     }
 
     @Override
-    public HttpAsyncRequestConsumer<HttpRequest> processRequest(HttpRequest hr, HttpContext hc)
-        throws HttpException, IOException {
+    public HttpAsyncRequestConsumer<HttpRequest> processRequest(HttpRequest hr, HttpContext hc) throws HttpException, IOException {
         return new BasicAsyncRequestConsumer();
     }
 
@@ -188,25 +208,5 @@ public abstract class EndpointHandler extends EntityDriver implements HttpAsyncR
     private void warn(HttpResponse response) throws UnsupportedEncodingException {
         response.setEntity(new NStringEntity("not implemented yet"));
         response.setStatusCode(5000);
-    }
-
-    /**
-     * Gets parameter value of request line.
-     *
-     * @param request HTTP request
-     * @param name    name of the request line parameter
-     *
-     * @return parameter value, only the first is returned if there are multiple values for the same name
-     *
-     * @throws URISyntaxException in case of URL issue
-     */
-    public static String getParameter(HttpRequest request, String name) throws URISyntaxException {
-        NameValuePair nv = URLEncodedUtils.parse(new URI(request.getRequestLine().getUri()), "UTF-8").stream()
-            .filter(param -> param.getName().equals(name))
-            .findFirst().get();
-        if (nv == null) {
-            return null;
-        }
-        return nv.getValue();
     }
 }
