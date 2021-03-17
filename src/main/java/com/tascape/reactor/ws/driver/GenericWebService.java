@@ -21,6 +21,7 @@ import com.tascape.reactor.SystemConfiguration;
 import com.tascape.reactor.driver.EntityDriver;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
@@ -160,8 +161,9 @@ public final class GenericWebService extends EntityDriver {
     }
 
     public void registerResponseSimulator(String clazz)
-        throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        EndpointHandler simulator = (EndpointHandler) Class.forName(clazz).newInstance();
+        throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, IllegalArgumentException,
+        InvocationTargetException {
+        EndpointHandler simulator = (EndpointHandler) Class.forName(clazz).getDeclaredConstructor().newInstance();
         reqistry.register(simulator.getEndpoint(), simulator);
     }
 
